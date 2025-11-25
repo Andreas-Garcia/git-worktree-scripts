@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# Example repository-specific worktree setup script
+# Copy this to scripts/setup-worktree.sh in your repository and customize as needed
+#
+# This script is called automatically by create-worktree.sh after creating a new worktree.
+# It receives the worktree path as the first argument.
+
+set -e
+
+WORKTREE_PATH="${1:-$(pwd)}"
+
+echo "Setting up worktree at: $WORKTREE_PATH"
+cd "$WORKTREE_PATH"
+
+# Example: Python virtual environment setup
+if [ ! -d ".venv" ]; then
+    echo "Creating Python virtual environment..."
+    
+    # Detect highest available Python version (3.14, 3.13, or 3.12)
+    PYTHON_CMD=""
+    for version in 3.14 3.13 3.12; do
+        if command -v "python${version}" >/dev/null 2>&1; then
+            PYTHON_CMD="python${version}"
+            break
+        fi
+    done
+
+    # Fallback to python3 if specific versions not found
+    if [ -z "$PYTHON_CMD" ]; then
+        if command -v python3 >/dev/null 2>&1; then
+            PYTHON_CMD="python3"
+        else
+            echo "Warning: No Python 3.12+ installation found"
+            echo "Skipping virtual environment setup"
+            exit 0
+        fi
+    fi
+
+    echo "Using $PYTHON_CMD for virtual environment"
+    "$PYTHON_CMD" -m venv .venv
+    source .venv/bin/activate
+    echo "Installing dependencies..."
+    pip install --upgrade pip
+    
+    # Install project dependencies (customize as needed)
+    if [ -f "pyproject.toml" ]; then
+        pip install -e ".[dev]"
+    elif [ -f "requirements.txt" ]; then
+        pip install -r requirements.txt
+    elif [ -f "requirements-dev.txt" ]; then
+        pip install -r requirements-dev.txt
+    fi
+    
+    echo "✓ Virtual environment created and dependencies installed"
+else
+    echo "Virtual environment already exists at .venv"
+fi
+
+# Add other repository-specific setup steps here:
+# - npm install
+# - bundle install
+# - cargo build
+# - etc.
+
