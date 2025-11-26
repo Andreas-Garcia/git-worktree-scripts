@@ -67,14 +67,15 @@ This project supports both **light git flow** and **strict git flow** workflows:
 - Works out of the box for repositories using a simple `main` branch workflow
 
 ### Strict Git Flow
-- **Feature branches** (`feature/*`) and **release branches** (`release/*`) branch from `develop`
+- **Feature branches** (`feature/*`) and **release branches** (`release/*`) branch from `develop` (standard) or `dev` (alternative shorthand)
 - **Hotfix branches** (`hotfix/*`) branch from `main` (or `master`)
 - The scripts automatically detect which workflow your repository uses based on which branches exist
 
 **How it works:**
-- When creating a feature branch, the script checks if `develop` exists. If it does, it uses `develop` as the base (strict git flow). Otherwise, it falls back to `main` (light git flow).
+- When creating a feature branch, the script checks for `develop` first (standard), then `dev` (alternative), then falls back to `main` (light git flow).
 - When creating a hotfix branch, the script always uses `main` or `master` as the base.
 - Merge detection in removal scripts uses the same logic to check merges against the appropriate base branch.
+- Protected branches (`main`, `master`, `develop`, `dev`) cannot be deleted through the removal scripts.
 
 ## Working with Multiple Branches (Git Worktrees)
 

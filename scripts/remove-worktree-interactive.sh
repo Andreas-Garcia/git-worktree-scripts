@@ -3,14 +3,14 @@
 # Script to list all git worktrees and remove the selected one
 #
 # This script displays all available git worktrees, allows you to select one,
-# and removes the worktree and its branch (except protected branches: main, master, develop).
+# and removes the worktree and its branch (except protected branches: main, master, develop, dev).
 # Useful for cleaning up worktrees interactively.
 #
 # Behavior:
-# 1. Lists all worktrees, marking protected branches (main, master, develop) as [PROTECTED] and non-selectable
+# 1. Lists all worktrees, marking protected branches (main, master, develop, dev) as [PROTECTED] and non-selectable
 # 2. User selects a worktree by number (only non-protected worktrees are numbered)
 # 3. Checks and displays merge status of the reference branch (currently checked out branch) to detect safety
-#    Safety means: reference branch is merged into its base branch (develop for features/releases, main for hotfixes)
+#    Safety means: reference branch is merged into its base branch (develop/dev for features/releases, main for hotfixes)
 #    Merge status is shown to the user before deletion confirmation
 #
 # If branch is merged (PR accepted):
@@ -25,7 +25,7 @@
 # 6. Removes worktree directory and deletes the branch (local and optionally remote) if confirmed
 #
 # Merge detection (for the reference branch currently checked out in the worktree):
-# - Determines base branch based on git flow conventions (develop for features/releases, main for hotfixes)
+# - Determines base branch based on git flow conventions (develop/dev for features/releases, main for hotfixes)
 # - Detects if the reference branch is merged directly into origin/base
 # - Detects transitive merges (A→B→base) when regular merge commits are used
 # - Does NOT detect squash merges (commits are recreated, not preserved in history)
@@ -56,11 +56,14 @@ get_base_branch() {
         else
             echo "main"  # Default fallback
         fi
-    # Check for feature or release branches (branch from develop in strict git flow)
+    # Check for feature or release branches (branch from develop/dev in strict git flow)
     elif [[ "$branch" == feature/* ]] || [[ "$branch" == release/* ]]; then
-        # Try develop first (strict git flow)
+        # Try develop first (strict git flow standard)
         if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
             echo "develop"
+        # Try dev as alternative (some teams use this shorthand)
+        elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
+            echo "dev"
         # Fallback to main (light git flow)
         elif git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             echo "main"
@@ -81,10 +84,10 @@ get_base_branch() {
     fi
 }
 
-# Check if branch is protected (main, master, or develop)
+# Check if branch is protected (main, master, develop, or dev)
 is_protected_branch() {
     local branch="$1"
-    if [ "$branch" = "main" ] || [ "$branch" = "master" ] || [ "$branch" = "develop" ]; then
+    if [ "$branch" = "main" ] || [ "$branch" = "master" ] || [ "$branch" = "develop" ] || [ "$branch" = "dev" ]; then
         return 0
     fi
     return 1

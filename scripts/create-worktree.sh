@@ -6,8 +6,8 @@
 # development environment, and opening it in your preferred editor (Cursor or VS Code).
 # 
 # Git Flow Support:
-# - Feature branches (feature/*) and release branches (release/*) branch from 'develop' (strict git flow)
-#   or 'main' (light git flow) depending on what exists in the repository
+# - Feature branches (feature/*) and release branches (release/*) branch from 'develop' (standard) or 'dev' (alternative)
+#   in strict git flow, or 'main' (light git flow) depending on what exists in the repository
 # - Hotfix branches (hotfix/*) branch from 'main' or 'master' (strict git flow)
 # - Other branches default to 'main' or 'master'
 #
@@ -15,7 +15,7 @@
 #
 # Main steps:
 # 1. Validates prerequisites (branch doesn't exist, base branch exists, worktree path available)
-# 2. Determines base branch based on git flow conventions (develop for features/releases, main for hotfixes)
+# 2. Determines base branch based on git flow conventions (develop/dev for features/releases, main for hotfixes)
 # 3. Pulls latest changes from base branch to ensure up-to-date base
 # 4. Creates git worktree from base branch with the new branch name
 # 4. Sets up Python virtual environment and installs dependencies
@@ -70,11 +70,14 @@ get_base_branch() {
         else
             echo "main"  # Default fallback
         fi
-    # Check for feature or release branches (branch from develop in strict git flow)
+    # Check for feature or release branches (branch from develop/dev in strict git flow)
     elif [[ "$branch" == feature/* ]] || [[ "$branch" == release/* ]]; then
-        # Try develop first (strict git flow)
+        # Try develop first (strict git flow standard)
         if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
             echo "develop"
+        # Try dev as alternative (some teams use this shorthand)
+        elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
+            echo "dev"
         # Fallback to main (light git flow)
         elif git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             echo "main"
