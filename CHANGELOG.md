@@ -52,6 +52,15 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.1.1] - 2025-01-27
+
+### Improved
+
+- **Git Flow Support**: Added support for `dev` branch as alternative to `develop`
+  - Scripts now check for `develop` (standard) first, then `dev` (alternative shorthand)
+  - `dev` branch is now protected from deletion alongside `main`, `master`, and `develop`
+  - Maintains backward compatibility with repositories using either naming convention
+
 ## [1.1.0] - 2025-01-27
 
 ### Added
