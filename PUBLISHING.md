@@ -28,6 +28,7 @@ npm view git-worktree-scripts
 ```
 
 If you see `404`, the name is available. If you see package information, you'll need to:
+
 - Use a different name (update `package.json`)
 - Or contact the owner if it's your package
 
@@ -79,12 +80,15 @@ rm git-worktree-scripts-*.tgz
 You'll need to authenticate once to create the package. Choose one method:
 
 **Option A: Use npm login** (if security key works):
+
 ```bash
 npm login
 ```
+
 Enter your username, password, and 2FA code when prompted.
 
 **Option B: Use a temporary token** (if login fails):
+
 - Go to [npmjs.com](https://www.npmjs.com) → [Your Profile](https://www.npmjs.com/~andreas-garcia) → Access Tokens
 - Generate a new token (type: "Publish" or "Automation")
 - Configure npm to use it:
@@ -126,7 +130,8 @@ The package is now published! Visit `https://www.npmjs.com/package/git-worktree-
 
 After the initial publish, set up Trusted Publishing to enable automated publishing for all future releases.
 
-**Important**: 
+**Important**:
+
 - Trusted Publishing requires npm CLI version 11.5.1 or later. The workflow automatically updates npm to the latest version.
 - **The package must already exist on npm** - publish it once manually first (see [First Publication](#first-publication) above).
 
@@ -136,7 +141,7 @@ Create `.github/workflows/publish.yml`:
 
 > **Important**: The workflow filename (`publish.yml`) must match exactly what you configure in npm Trusted Publishing settings (case-sensitive, including `.yml` extension).
 
-```yaml
+````yaml
 name: Publish to npm
 
 on:
@@ -204,7 +209,7 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+````
 
 ### Step 2: Configure Trusted Publishing on npm
 
@@ -250,6 +255,7 @@ Use the release script for easy version management:
 ```
 
 The script will:
+
 - Check that working directory is clean
 - Run bash syntax checks
 - Bump the version in `package.json`
@@ -258,6 +264,7 @@ The script will:
 - Push to GitHub
 
 GitHub Actions will automatically:
+
 - Detect the new tag
 - Run the workflow
 - Publish to npm using Trusted Publishing
@@ -320,13 +327,16 @@ If the "Use Security Key" button on npm's website doesn't respond:
 **Solutions**:
 
 1. Use **TOTP (Authenticator App)** instead:
+
    - Go to npm settings → Two-Factor Authentication
    - Use "Authenticator App" option instead of security key
 
 2. Use **CLI authentication**:
+
    ```bash
    npm login
    ```
+
    This will prompt for username/password and 2FA code (TOTP), bypassing the web security key issue.
 
 3. Generate a **temporary token**:
@@ -339,21 +349,25 @@ If the "Use Security Key" button on npm's website doesn't respond:
 If you encounter an "Unable to authenticate" error:
 
 1. **Verify workflow filename matches exactly**:
+
    - Check npm package settings → Trusted Publisher
    - The workflow filename must match exactly (case-sensitive)
    - Must include `.yml` extension
    - Should be `publish.yml` (not `.github/workflows/publish.yml`)
 
 2. **Check npm version**:
+
    - Trusted Publishing requires npm 11.5.1 or later
    - The workflow automatically updates npm, but verify it's running
 
 3. **Verify GitHub Actions configuration**:
+
    - GitHub Actions workflow is enabled (Settings → Actions)
    - Workflow has `id-token: write` permission (required for OIDC)
    - Using GitHub-hosted runners (self-hosted runners not supported yet)
 
 4. **Verify npm Trusted Publishing configuration**:
+
    - Organization/user: `Andreas-Garcia`
    - Repository: `git-worktree-scripts`
    - Workflow filename: `publish.yml`
@@ -405,5 +419,3 @@ After publishing:
 4. Test npx: `npx git-worktree --help`
 5. Share: Update README with npm package link
 6. Monitor: Check download stats and issues
-
-
