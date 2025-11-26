@@ -48,7 +48,10 @@ VERSION=$(node -p "require('./package.json').version")
 echo "New version: $VERSION"
 
 # Commit version change
-git add package.json package-lock.json
+git add package.json
+if [ -f "package-lock.json" ]; then
+    git add package-lock.json
+fi
 git commit -m "chore: bump version to $VERSION"
 
 # Create and push tag
