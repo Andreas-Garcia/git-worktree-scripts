@@ -52,6 +52,8 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-01-27
+
 ### Added
 
 - **Strict Git Flow Support**: Added automatic detection and support for strict git flow workflows
