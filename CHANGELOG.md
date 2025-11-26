@@ -52,6 +52,11 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+### Removed
+
+- **CONTRIBUTING.md**: Removed contributing guidelines document
+- **PUBLISHING.md**: Removed publishing guide document
+
 ## [1.0.1] - 2025-11-26
 
 ### Fixed
