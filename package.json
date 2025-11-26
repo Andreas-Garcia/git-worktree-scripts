@@ -1,6 +1,6 @@
 {
   "name": "git-worktree-scripts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Bash scripts for managing git worktrees with editor integration",
   "main": "index.js",
   "bin": {
@@ -34,4 +34,3 @@
     "node": ">=12.0.0"
   }
 }
-
