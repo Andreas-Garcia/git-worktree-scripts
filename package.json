@@ -1,0 +1,37 @@
+{
+  "name": "git-worktree-scripts",
+  "version": "1.0.0",
+  "description": "Bash scripts for managing git worktrees with editor integration",
+  "main": "index.js",
+  "bin": {
+    "git-worktree": "./bin/git-worktree",
+    "git-worktree-create": "./bin/create-worktree.sh",
+    "git-worktree-open": "./bin/open-worktree.sh",
+    "git-worktree-remove": "./bin/remove-worktree-interactive.sh",
+    "git-worktree-remove-branch": "./bin/remove-worktree-branch.sh"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "install.sh"
+  ],
+  "keywords": [
+    "git",
+    "worktree",
+    "git-worktree",
+    "development",
+    "tools",
+    "bash",
+    "scripts"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Andreas-Garcia/git-worktree-scripts.git"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}
+

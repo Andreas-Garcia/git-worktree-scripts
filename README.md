@@ -23,52 +23,240 @@ Perfect for developers who work on multiple features simultaneously or need sepa
 
 ## Installation
 
-See [QUICKSTART.md](QUICKSTART.md) for detailed installation instructions.
+### Option 1: NPM Package (Recommended)
 
-### Quick Install
-
-```bash
-# Clone this repository once
-git clone <your-repo-url>/git-worktree-scripts.git ~/git-worktree-scripts
-
-# In any repository, run the installer
-~/git-worktree-scripts/install.sh
-
-# Optionally create git aliases for convenience
-~/git-worktree-scripts/install.sh scripts --create-aliases
-```
-
-## Usage
-
-### Create a Worktree
+Use via `npx` - no installation needed:
 
 ```bash
-./scripts/create-worktree.sh feature/my-feature
+npx git-worktree create feature/my-feature
+npx git-worktree open
+npx git-worktree remove
+npx git-worktree remove feature/my-feature
 ```
 
-This will:
-
-- Create a new worktree from the `main` branch
-- Set up the development environment (if `scripts/setup-worktree.sh` exists)
-- Open the worktree in your editor (Cursor or VS Code)
-
-### Open an Existing Worktree
+Or install as a dev dependency for convenience:
 
 ```bash
-./scripts/open-worktree.sh
+npm install --save-dev git-worktree-scripts
+# or
+yarn add -D git-worktree-scripts
+# or
+pnpm add -D git-worktree-scripts
 ```
 
-Lists all worktrees and opens the selected one in your editor.
-
-### Remove a Worktree
+After installation, use the same commands:
 
 ```bash
-# Interactive removal
-./scripts/remove-worktree-interactive.sh
-
-# Direct removal
-./scripts/remove-worktree-branch.sh feature/my-feature
+npx git-worktree create feature/my-feature
+npx git-worktree open
+npx git-worktree remove
 ```
+
+**Alternative commands** (also available):
+
+- `npx git-worktree-create` (alias for `git-worktree create`)
+- `npx git-worktree-open` (alias for `git-worktree open`)
+- `npx git-worktree-remove` (alias for `git-worktree remove`)
+
+## Working with Multiple Branches (Git Worktrees)
+
+When working on multiple features simultaneously or when you need separate editor windows for different branches, use **git worktrees**. This allows you to have multiple working directories for the same repository, each on a different branch.
+
+### Quick Setup
+
+Use the provided command to create a worktree and open it in your preferred code editor (Cursor or VS Code):
+
+```bash
+# Create worktree with new branch (always created from latest main)
+npx git-worktree create feature/my-feature
+
+# Create worktree with custom worktree directory name
+npx git-worktree create feature/my-feature my-feature-worktree
+
+# If branch already exists with commits, script will offer options:
+# - Create worktree for existing branch (default)
+# - Checkout branch in current repo
+# - Remove existing branch and create new one
+```
+
+**Editor Selection:**
+
+- If both Cursor and VS Code are installed, you'll be prompted to choose
+- If only one editor is installed, it opens automatically
+- **macOS**: Fully tested. Editors must be in `/Applications`
+- **Linux**: Experimental support (not tested). Uses `cursor` or `code` commands
+- **Windows**: Experimental support (not tested). Uses `cursor` or `code` commands via Git Bash/Cygwin
+
+⚠️ **Note**: Linux and Windows support has not been tested. If you encounter issues, please report them.
+
+### What the Script Does
+
+The `git-worktree create` command automates the following main steps:
+
+1. **Validates prerequisites**: Checks if branch/worktree exists, ensures `main` branch exists, and worktree path is available
+
+2. **Handles existing branches**: If branch already exists with commits, offers interactive options:
+
+   - **Create worktree for existing branch** (default): Creates a worktree and checks out the existing branch
+   - **Checkout in current repo**: Checks out the branch in your current repository
+   - **Remove existing branch**: Removes the branch and creates a new one from main
+   - If a worktree already exists for the branch, offers to open it directly
+
+3. **Updates main branch**: For new branches, pulls the latest changes from `origin/main` to ensure you have the most recent code
+
+4. **Creates worktree**: Creates a new git worktree:
+
+   - For new branches: Creates from the updated `main` branch with your specified branch name
+   - For existing branches: Creates worktree and checks out the existing branch (fetches from remote if needed)
+
+5. **Sets up development environment**: Runs repository-specific setup script if `scripts/setup-worktree.sh` exists
+
+6. **Opens in editor**: Automatically opens the worktree directory in Cursor or VS Code
+
+**Important**:
+
+- For new branches, the script always creates worktrees from the `main` branch (after pulling the latest changes) to ensure a consistent and up-to-date base
+- For existing branches, the script creates a worktree for the existing branch, preserving any existing commits
+
+### Opening Existing Worktrees
+
+To quickly open an existing worktree in your editor:
+
+```bash
+# List all worktrees and open selected one in your editor
+npx git-worktree open
+```
+
+The command will:
+
+1. Display all available worktrees with their branch names
+2. Prompt you to select a worktree by number
+3. Prompt you to choose an editor (if both Cursor and VS Code are available)
+4. Open the selected worktree in your chosen editor
+
+This is useful when you have multiple worktrees and want to quickly switch between them without manually navigating to their directories.
+
+### Manual Setup
+
+If you prefer to create worktrees manually:
+
+```bash
+# Create worktree for existing branch
+git worktree add ../repo-feature2 feature/my-feature
+
+# Create worktree with new branch
+git worktree add ../repo-feature2 -b feature/new-feature
+
+# Open in Cursor (macOS)
+open -a Cursor ../repo-feature2
+
+# Or open in VS Code (macOS)
+open -a "Visual Studio Code" ../repo-feature2
+
+# Or use command line (Linux/macOS)
+cursor ../repo-feature2  # for Cursor
+code ../repo-feature2    # for VS Code
+```
+
+### Benefits
+
+- Work on multiple branches simultaneously
+- Each editor window operates independently
+- No need to stash/commit when switching contexts
+- Shared git history (same `.git` directory)
+
+### Cleanup
+
+#### Interactive Removal
+
+To interactively list and remove worktrees:
+
+```bash
+# List all worktrees and remove selected one
+npx git-worktree remove
+
+# Also remove remote branch when removing worktree
+# (use the direct removal method with --remove-remote flag)
+```
+
+The command will:
+
+1. Display all available worktrees with their branch names
+2. Protect `main` branch and current worktree from deletion (marked as `[PROTECTED]`)
+3. Prompt you to select a worktree by number (only non-protected worktrees are selectable)
+4. Show the selected worktree details and ask for confirmation
+5. Remove the worktree and its associated branch
+
+**Safety Features:**
+
+- Cannot remove `main` branch worktrees
+- Cannot remove the worktree you're currently inside (prevents shell errors)
+- Must switch to a different worktree before removing your current one
+- Handles missing worktree directories gracefully (stale git entries are cleaned up automatically)
+
+**Note:** If a worktree directory was manually deleted, the command will detect this and clean up the stale git entries automatically.
+
+#### Direct Removal
+
+If you know the branch name, you can remove it directly:
+
+```bash
+# Remove worktree and local branch
+npx git-worktree remove feature/my-feature
+
+# Note: To remove remote branch, use git directly:
+git push origin --delete feature/my-feature
+```
+
+#### Manual Removal
+
+```bash
+# Remove worktree when done
+git worktree remove ../repo-feature2
+```
+
+### Example Workflow
+
+```bash
+# Main repository in ~/my-project (on main branch)
+cd ~/my-project
+
+# Create worktree for feature branch
+npx git-worktree create feature/add-flac-support
+
+# This command will:
+# - Pull latest changes from origin/main
+# - Create new directory: ~/my-project-feature-add-flac-support
+# - Open new editor window (Cursor or VS Code) with that directory
+# - Check out feature/add-flac-support branch from updated main
+
+# Now you can work in both windows:
+# - Main window: main branch
+# - New window: feature/add-flac-support branch
+
+# When done, remove the worktree
+npx git-worktree remove feature/add-flac-support
+```
+
+### Listing Worktrees
+
+```bash
+# List all worktrees
+git worktree list
+
+# Output example:
+# /path/to/my-project          abc1234 [main]
+# /path/to/my-project-feature2  def5678 [feature/my-feature]
+
+# Interactive command to list and open worktrees in your editor
+npx git-worktree open
+```
+
+### Notes
+
+- Each worktree shares the same `.git` directory, so commits, branches, and remotes are shared
+- You cannot check out the same branch in multiple worktrees simultaneously
+- Worktrees are useful for comparing branches side-by-side or working on multiple features without switching contexts
 
 ## Repository-Specific Setup
 
@@ -86,17 +274,7 @@ if [ ! -d ".venv" ]; then
 fi
 ```
 
-The `create-worktree.sh` script will automatically detect and run this file if it exists.
-
-## Git Aliases (Optional)
-
-After installation with `--create-aliases`, you can use:
-
-```bash
-git worktree feature/my-feature        # Create worktree
-git worktree-open                      # Open existing worktree
-git worktree-remove                    # Remove worktree interactively
-```
+The `git-worktree create` command will automatically detect and run this file if it exists.
 
 ## Scripts
 

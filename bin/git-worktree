@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# Main git-worktree command that handles subcommands
+# Usage: git-worktree <subcommand> [args...]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+SUBCOMMAND="${1:-}"
+
+# Handle help flags
+if [ "$SUBCOMMAND" = "--help" ] || [ "$SUBCOMMAND" = "-h" ] || [ "$SUBCOMMAND" = "help" ]; then
+    echo "Usage: git-worktree <command> [args...]"
+    echo ""
+    echo "Commands:"
+    echo "  create <branch-name> [worktree-name]  Create a new worktree"
+    echo "  open                                  Open an existing worktree"
+    echo "  remove [branch-name]                  Remove a worktree (interactive if no branch specified)"
+    echo "  rm [branch-name]                      Alias for remove"
+    echo ""
+    echo "Examples:"
+    echo "  git-worktree create feature/my-feature"
+    echo "  git-worktree open"
+    echo "  git-worktree remove"
+    echo "  git-worktree remove feature/my-feature"
+    echo ""
+    echo "For more information, visit: https://github.com/Andreas-Garcia/git-worktree-scripts"
+    exit 0
+fi
+
+case "$SUBCOMMAND" in
+    create)
+        shift
+        exec "$REPO_ROOT/scripts/create-worktree.sh" "$@"
+        ;;
+    open)
+        shift
+        exec "$REPO_ROOT/scripts/open-worktree.sh" "$@"
+        ;;
+    remove|rm)
+        shift
+        # Check if next arg looks like a branch name (no dash prefix)
+        if [ $# -gt 0 ] && [[ ! "$1" =~ ^- ]]; then
+            exec "$REPO_ROOT/scripts/remove-worktree-branch.sh" "$@"
+        else
+            exec "$REPO_ROOT/scripts/remove-worktree-interactive.sh" "$@"
+        fi
+        ;;
+    *)
+        if [ -z "$SUBCOMMAND" ]; then
+            echo "Usage: git-worktree <command> [args...]"
+            echo ""
+            echo "Commands:"
+            echo "  create <branch-name> [worktree-name]  Create a new worktree"
+            echo "  open                                  Open an existing worktree"
+            echo "  remove [branch-name]                  Remove a worktree (interactive if no branch specified)"
+            echo "  rm [branch-name]                      Alias for remove"
+            echo ""
+            echo "Examples:"
+            echo "  git-worktree create feature/my-feature"
+            echo "  git-worktree open"
+            echo "  git-worktree remove"
+            echo "  git-worktree remove feature/my-feature"
+            echo ""
+            echo "Run 'git-worktree --help' for more information"
+            exit 1
+        else
+            echo "Unknown command: $SUBCOMMAND"
+            echo "Run 'git-worktree --help' for usage information"
+            exit 1
+        fi
+        ;;
+esac
+
