@@ -1,5 +1,53 @@
 # Quick Start Guide
 
+## Why npm? (This isn't a Node.js project!)
+
+**npm** (Node Package Manager) is being used here purely as a **distribution mechanism**, not because this project requires Node.js.
+
+**Are the scripts wrapped in Node.js?**
+
+No! The scripts are **pure bash** - they run directly without any Node.js involvement. Here's what's actually happening:
+
+- `package.json` is just **metadata** - it tells npm where to find the bash scripts
+- The `bin` entries point directly to bash scripts (e.g., `./bin/git-worktree` which starts with `#!/bin/bash`)
+- When you run `npx git-worktree`, npm downloads the package, finds the bash script, and executes it directly
+- There's no Node.js code, no `index.js`, no Node.js dependencies - just bash scripts packaged for npm distribution
+
+Think of `package.json` as a "manifest" that tells npm "here are the bash scripts and how to run them" - similar to how a `Dockerfile` describes a container but isn't the container itself.
+
+**Is this standard for bash projects?**
+
+No, npm is not the traditional standard for distributing bash scripts. Common alternatives include:
+
+- **Homebrew** (macOS) - Very popular for command-line tools
+- **System package managers** (apt/yum/pacman on Linux)
+- **GitHub releases** - Direct download and manual installation
+- **Git clone** - Clone and use directly
+
+**Why use npm for bash scripts?**
+
+Despite not being standard, npm offers some advantages:
+
+- ✅ **Easy installation**: `npx` works on macOS, Linux, and Windows
+- ✅ **No installation needed**: Run commands directly with `npx` without installing
+- ✅ **Version management**: Easy to use specific versions or always get the latest
+- ✅ **Widely available**: npm comes pre-installed with Node.js (which many developers already have)
+- ✅ **Cross-platform**: Works the same way everywhere
+- ✅ **Developer-friendly**: Many developers already have npm installed
+
+**Important**: You don't need Node.js installed to use these scripts! The scripts are pure bash. npm is just the delivery method. If you don't have npm, you can also:
+
+- Clone the repository directly: `git clone https://github.com/Andreas-Garcia/git-worktree-scripts.git`
+- Download scripts manually from GitHub releases
+
+**npx** is a tool that comes with npm. When you run `npx git-worktree`, it:
+
+1. Downloads the package temporarily (if not already cached)
+2. Runs the bash scripts
+3. Cleans up afterward
+
+This means you can use `git-worktree-scripts` without any installation - just run `npx git-worktree` commands directly!
+
 ## Installation
 
 ### NPM Package
@@ -64,4 +112,3 @@ yarn upgrade git-worktree-scripts
 # or
 pnpm update git-worktree-scripts
 ```
-

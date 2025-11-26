@@ -3,8 +3,22 @@
 # Main git-worktree command that handles subcommands
 # Usage: git-worktree <subcommand> [args...]
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Get the actual script location, resolving symlinks
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+# Resolve symlinks to get the real path
+if [ -L "$SCRIPT_PATH" ]; then
+    SCRIPT_PATH="$(readlink -f "$SCRIPT_PATH" 2>/dev/null || readlink "$SCRIPT_PATH" 2>/dev/null || echo "$SCRIPT_PATH")"
+fi
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+# Find the package root (where package.json is)
+REPO_ROOT="$SCRIPT_DIR"
+while [ ! -f "$REPO_ROOT/package.json" ] && [ "$REPO_ROOT" != "/" ]; do
+    REPO_ROOT="$(cd "$REPO_ROOT/.." && pwd)"
+done
+# If we couldn't find package.json, fall back to one level up from script dir
+if [ ! -f "$REPO_ROOT/package.json" ]; then
+    REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
 
 SUBCOMMAND="${1:-}"
 

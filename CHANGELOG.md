@@ -52,6 +52,13 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+### Fixed
+
+- **Path Resolution**: Fixed path resolution issue when running via npm/npx symlinks
+  - Scripts now correctly resolve symlinks to find package root
+  - Fixes "No such file or directory" error when running `npx git-worktree` commands
+  - Works correctly both in development and when installed via npm
+
 ### Removed
 
 - **CONTRIBUTING.md**: Removed contributing guidelines document
