@@ -11,7 +11,8 @@
 # - Hotfix branches (hotfix/*) branch from 'main' or 'master' (strict git flow)
 # - Other branches default to 'main' or 'master'
 #
-# Usage: ./scripts/create-worktree.sh <branch-name> [worktree-name]
+# Usage: ./scripts/create-worktree.sh [worktree-name]
+# Interactive mode: prompts for branch type and name
 #
 # Main steps:
 # 1. Validates prerequisites (branch doesn't exist, base branch exists, worktree path available)
@@ -22,10 +23,8 @@
 # 5. Opens the worktree directory in your editor (Cursor or VS Code)
 #
 # Examples:
-#   ./scripts/create-worktree.sh feature/my-feature
-#   ./scripts/create-worktree.sh feature/123-add-ogg-support
-#   ./scripts/create-worktree.sh chore/update-dependencies
-#   ./scripts/create-worktree.sh hotfix/critical-metadata-bug
+#   ./scripts/create-worktree.sh
+#   ./scripts/create-worktree.sh my-custom-worktree-name
 
 set -e
 
@@ -33,32 +32,114 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/editor-common.sh"
 
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <branch-name> [worktree-name]"
-    echo ""
-    echo "Examples:"
-    echo "  $0 feature/my-feature"
-    echo "  $0 feature/123-add-ogg-support"
-    echo "  $0 chore/update-dependencies"
-    echo "  $0 hotfix/critical-metadata-bug"
-    exit 1
-fi
-
 # Get the repository root (where .git directory is)
 REPO_ROOT=$(git rev-parse --show-toplevel)
 REPO_NAME=$(basename "$REPO_ROOT")
 
-# Parse arguments
-BRANCH_NAME="$1"
-WORKTREE_NAME="${2:-${BRANCH_NAME#feature/}}"
-WORKTREE_NAME="${WORKTREE_NAME#chore/}"
-WORKTREE_NAME="${WORKTREE_NAME#hotfix/}"
+# Check if repository uses strict git flow (has develop/dev branch)
+local has_develop=false
+if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
+    has_develop=true
+elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
+    has_develop=true
+fi
+
+# Interactive mode: always prompt for branch type and name
+echo "Create new worktree"
+echo ""
+
+if [ "$has_develop" = true ]; then
+    echo "Strict Git Flow detected (develop/dev branch exists)"
+    echo ""
+    echo "Select branch type:"
+    echo "  1) feature/*  (branches from develop/dev)"
+    echo "  2) release/*  (branches from develop/dev)"
+    echo "  3) hotfix/*   (branches from main/master)"
+    echo ""
+    read -p "Choose option (1-3): " -n 1 -r
+    echo ""
+    
+    case $REPLY in
+        1)
+            BRANCH_TYPE="feature"
+            ;;
+        2)
+            BRANCH_TYPE="release"
+            ;;
+        3)
+            BRANCH_TYPE="hotfix"
+            ;;
+        *)
+            echo "Invalid selection. Aborted."
+            exit 1
+            ;;
+    esac
+else
+    echo "Light Git Flow detected (no develop/dev branch)"
+    echo ""
+    echo "Select branch type:"
+    echo "  1) feature/*  (branches from main)"
+    echo "  2) chore/*    (branches from main)"
+    echo "  3) hotfix/*   (branches from main)"
+    echo ""
+    read -p "Choose option (1-3): " -n 1 -r
+    echo ""
+    
+    case $REPLY in
+        1)
+            BRANCH_TYPE="feature"
+            ;;
+        2)
+            BRANCH_TYPE="chore"
+            ;;
+        3)
+            BRANCH_TYPE="hotfix"
+            ;;
+        *)
+            echo "Invalid selection. Aborted."
+            exit 1
+            ;;
+    esac
+fi
+
+echo ""
+read -p "Enter branch name (without prefix): " BRANCH_SUFFIX
+if [ -z "$BRANCH_SUFFIX" ]; then
+    echo "Error: Branch name cannot be empty"
+    exit 1
+fi
+
+BRANCH_NAME="$BRANCH_TYPE/$BRANCH_SUFFIX"
+
+# Optional worktree name (if provided as argument)
+if [ $# -ge 1 ]; then
+    WORKTREE_NAME="$1"
+fi
+
+# Parse worktree name from branch name if not provided
+if [ -z "$WORKTREE_NAME" ]; then
+    WORKTREE_NAME="${BRANCH_NAME#feature/}"
+    WORKTREE_NAME="${WORKTREE_NAME#chore/}"
+    WORKTREE_NAME="${WORKTREE_NAME#release/}"
+    WORKTREE_NAME="${WORKTREE_NAME#hotfix/}"
+fi
 
 # Determine base branch based on git flow conventions
 # Strict git flow: features/releases branch from develop, hotfixes branch from main
 # Light git flow: everything branches from main
 get_base_branch() {
     local branch="$1"
+    
+    # Check if repository uses strict git flow (has develop/dev branch)
+    local has_develop=false
+    local develop_branch=""
+    if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
+        has_develop=true
+        develop_branch="develop"
+    elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
+        has_develop=true
+        develop_branch="dev"
+    fi
     
     # Check for hotfix branches (always branch from main/master in strict git flow)
     if [[ "$branch" == hotfix/* ]]; then
@@ -86,7 +167,8 @@ get_base_branch() {
         else
             echo "main"  # Default fallback
         fi
-    # Default: use main/master (for other branch types like chore/, bugfix/, etc.)
+    # Default: for other branch types (chore/, bugfix/, etc.), use main/master
+    # Note: This case should not be reached in strict Git Flow repos due to validation above
     else
         if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             echo "main"

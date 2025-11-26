@@ -52,6 +52,23 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+### Added
+
+- **Interactive Branch Creation**: Added interactive mode for creating worktrees
+  - Always prompts for branch type and name (no direct mode)
+  - Strict Git Flow: offers feature/*, release/*, and hotfix/* options
+  - Light Git Flow: offers feature/*, chore/*, and hotfix/* options
+  - Automatically branches from correct base (develop/dev for features/releases, main for hotfixes/chores)
+  - Optional custom worktree directory name can still be provided as argument
+
+### Changed
+
+- **Strict Git Flow Validation**: Enforced strict Git Flow branch naming
+  - Prevents creation of non-Git Flow branch types (chore/*, bugfix/*, etc.) in strict Git Flow repos
+  - Prevents removal of non-Git Flow branch types in strict Git Flow repos
+  - Shows error with suggestion to rename branch to feature/* before removal
+  - Only official Git Flow branch types (feature/*, release/*, hotfix/*) are allowed in strict Git Flow repos
+
 ## [1.1.1] - 2025-01-27
 
 ### Improved

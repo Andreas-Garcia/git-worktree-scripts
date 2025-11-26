@@ -54,6 +54,28 @@ if [ -z "$BRANCH_NAME" ]; then
     exit 1
 fi
 
+# Check if repository uses strict git flow and validate branch name
+local has_develop=false
+if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
+    has_develop=true
+elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
+    has_develop=true
+fi
+
+# In strict Git Flow, prevent removal of non-Git Flow branch types
+if [ "$has_develop" = true ]; then
+    if [[ ! "$BRANCH_NAME" =~ ^(feature|release|hotfix)/ ]] && [[ ! "$BRANCH_NAME" =~ ^(main|master|develop|dev)$ ]]; then
+        local branch_type="${BRANCH_NAME%%/*}"
+        local branch_suffix="${BRANCH_NAME#*/}"
+        echo "❌ Error: '$branch_type/*' is not a valid Git Flow branch type." >&2
+        echo "   Git Flow only supports: feature/*, release/*, and hotfix/*" >&2
+        echo "" >&2
+        echo "   This branch should be renamed to 'feature/$branch_suffix' before removal." >&2
+        echo "   To rename: git branch -m $BRANCH_NAME feature/$branch_suffix" >&2
+        exit 1
+    fi
+fi
+
 # Infer worktree path if not provided
 if [ -z "$WORKTREE_PATH" ]; then
     WORKTREE_NAME="${BRANCH_NAME#feature/}"

@@ -72,7 +72,8 @@ get_base_branch() {
         else
             echo "main"  # Default fallback
         fi
-    # Default: use main/master (for other branch types like chore/, bugfix/, etc.)
+    # Default: for other branch types (chore/, bugfix/, etc.), use main/master
+    # These are not part of strict Git Flow spec, so they default to main even if develop/dev exists
     else
         if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             echo "main"
@@ -248,6 +249,28 @@ fi
 SELECTED_INDEX=$((SELECTION - 1))
 SELECTED_PATH="${SELECTABLE_PATHS[$SELECTED_INDEX]}"
 SELECTED_BRANCH="${SELECTABLE_BRANCHES[$SELECTED_INDEX]}"
+
+# Check if repository uses strict git flow and validate branch name
+local has_develop=false
+if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
+    has_develop=true
+elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
+    has_develop=true
+fi
+
+# In strict Git Flow, prevent removal of non-Git Flow branch types
+if [ "$has_develop" = true ]; then
+    if [[ ! "$SELECTED_BRANCH" =~ ^(feature|release|hotfix)/ ]] && ! is_protected_branch "$SELECTED_BRANCH"; then
+        local branch_type="${SELECTED_BRANCH%%/*}"
+        local branch_suffix="${SELECTED_BRANCH#*/}"
+        echo "❌ Error: '$branch_type/*' is not a valid Git Flow branch type." >&2
+        echo "   Git Flow only supports: feature/*, release/*, and hotfix/*" >&2
+        echo "" >&2
+        echo "   This branch should be renamed to 'feature/$branch_suffix' before removal." >&2
+        echo "   To rename: git branch -m $SELECTED_BRANCH feature/$branch_suffix" >&2
+        exit 1
+    fi
+fi
 
 # Convert to absolute path if relative (only if directory exists)
 if [[ ! "$SELECTED_PATH" = /* ]]; then

@@ -69,11 +69,17 @@ This project supports both **light git flow** and **strict git flow** workflows:
 ### Strict Git Flow
 - **Feature branches** (`feature/*`) and **release branches** (`release/*`) branch from `develop` (standard) or `dev` (alternative shorthand)
 - **Hotfix branches** (`hotfix/*`) branch from `main` (or `master`)
+- **Other branches** (`chore/*`, `bugfix/*`, etc.) branch from `main`/`master` (these are not part of the official Git Flow spec)
 - The scripts automatically detect which workflow your repository uses based on which branches exist
 
 **How it works:**
-- When creating a feature branch, the script checks for `develop` first (standard), then `dev` (alternative), then falls back to `main` (light git flow).
-- When creating a hotfix branch, the script always uses `main` or `master` as the base.
+- When creating `feature/*` or `release/*` branches, the script checks for `develop` first (standard), then `dev` (alternative), then falls back to `main` (light git flow).
+- When creating `hotfix/*` branches, the script always uses `main` or `master` as the base.
+- **Strict validation**: In repositories with `develop`/`dev` branches (strict Git Flow), the script will:
+  - **Prevent creation** of non-Git Flow branch types (`chore/*`, `bugfix/*`, etc.) with an error message
+  - **Prevent removal** of non-Git Flow branch types with an error message
+  - Suggest using `feature/*` instead (e.g., `chore/something` → `feature/something`)
+  - Branches must be renamed to valid Git Flow types before removal
 - Merge detection in removal scripts uses the same logic to check merges against the appropriate base branch.
 - Protected branches (`main`, `master`, `develop`, `dev`) cannot be deleted through the removal scripts.
 
@@ -86,13 +92,14 @@ When working on multiple features simultaneously or when you need separate edito
 Use the provided command to create a worktree and open it in your preferred code editor (Cursor or VS Code):
 
 ```bash
-# Create worktree with new branch
-# - Feature/release branches: created from 'develop' (strict git flow) or 'main' (light git flow)
-# - Hotfix branches: created from 'main' or 'master'
-npx git-worktree create feature/my-feature
+# Interactive mode: prompts for branch type and name
+npx git-worktree create
+# Will prompt for:
+# - Branch type (feature/release/hotfix in strict Git Flow, or feature/chore/hotfix in light Git Flow)
+# - Branch name (without prefix)
 
-# Create worktree with custom worktree directory name
-npx git-worktree create feature/my-feature my-feature-worktree
+# Optional: specify custom worktree directory name
+npx git-worktree create my-custom-worktree-name
 
 # If branch already exists with commits, script will offer options:
 # - Create worktree for existing branch (default)
