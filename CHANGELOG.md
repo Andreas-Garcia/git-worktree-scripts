@@ -52,44 +52,72 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.0.1] - 2025-11-26
+
+### Fixed
+
+- **Release Script**: Fixed release script to handle missing `package-lock.json` file
+  - Release script now conditionally adds `package-lock.json` only if it exists
+  - Prevents release failures when package-lock.json is not present
+
+### Documentation
+
+- **PUBLISHING.md**: Added comprehensive explanation of GitHub Environments in Trusted Publishing
+  - Explains what GitHub Environments are and when to use them
+  - Provides setup instructions for environments with protection rules
+  - Clarifies that environments are optional for solo maintainers
+
+### CI
+
+- **Package Lock File**: Added `package-lock.json` for npm CI compatibility
+  - Required for `npm ci` command in GitHub Actions workflow
+  - Ensures consistent dependency resolution in CI/CD pipeline
+
 ## [1.0.0] - 2025-11-26
 
 ### Added
 
 - **npm Package Support**: Published as npm package for easy installation via `npx`
+
   - Package name: `git-worktree-scripts`
   - Can be used without installation: `npx git-worktree create feature/my-feature`
   - Can be installed as dev dependency: `npm install --save-dev git-worktree-scripts`
 
 - **Main Command Interface**: Added unified `git-worktree` command with subcommands
+
   - `git-worktree create <branch-name>` - Create a new worktree
   - `git-worktree open` - Open an existing worktree interactively
   - `git-worktree remove [branch-name]` - Remove a worktree (interactive or direct)
   - `git-worktree --help` - Show usage information
 
 - **Automated Publishing**: Set up GitHub Actions workflow for automated npm publishing
+
   - Uses npm Trusted Publishing (OIDC) for secure authentication
   - Automatically publishes when version tags are pushed
   - Includes bash syntax checking before publishing
   - Creates GitHub releases automatically
 
 - **Release Script**: Added `scripts/release.sh` for easy version management
+
   - Automates version bumping, committing, and tagging
   - Validates bash syntax before release
   - Supports patch, minor, and major version increments
 
 - **Pre-commit Hook**: Added bash syntax checking hook
+
   - Automatically validates all `.sh` files before commit
   - Prevents commits with syntax errors
   - Runs `bash -n` on staged shell scripts
 
 - **Comprehensive Documentation**:
+
   - **README.md**: Complete project overview with usage examples
   - **QUICKSTART.md**: Quick start guide for users
   - **PUBLISHING.md**: Publishing guide for maintainers
   - **CONTRIBUTING.md**: Contribution guidelines for developers
 
 - **Git Worktree Management Scripts**: Core functionality for managing git worktrees
+
   - `create-worktree.sh`: Creates worktrees from main branch with automatic editor opening
   - `open-worktree.sh`: Lists and opens existing worktrees interactively
   - `remove-worktree-interactive.sh`: Safely removes worktrees with merge detection
@@ -97,12 +125,14 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
   - `editor-common.sh`: Shared utilities for editor detection (Cursor, VS Code)
 
 - **Editor Integration**: Support for multiple code editors
+
   - Cursor editor support (macOS, Linux, Windows)
   - VS Code support (macOS, Linux, Windows)
   - Automatic editor detection and selection
   - Cross-platform compatibility
 
 - **Repository-Specific Setup**: Support for custom worktree setup scripts
+
   - Automatically runs `scripts/setup-worktree.sh` if present
   - Allows per-repository customization (e.g., Python venv, npm install)
   - Example script provided: `setup-worktree.sh.example`
@@ -116,6 +146,7 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 ### Documentation
 
 - **README.md**: Comprehensive documentation including:
+
   - Installation instructions (npm/npx)
   - Usage examples for all commands
   - Working with multiple branches guide
@@ -123,12 +154,14 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
   - Platform support information
 
 - **QUICKSTART.md**: User-focused quick start guide:
+
   - Installation steps
   - Basic usage examples
   - Common scenarios
   - Repository-specific setup
 
 - **PUBLISHING.md**: Maintainer guide covering:
+
   - Initial npm setup
   - First publication process
   - Trusted Publishing configuration
@@ -146,6 +179,7 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 ### CI
 
 - **GitHub Actions Workflow**: Automated publishing pipeline
+
   - Triggers on version tags (`v*`)
   - Validates package contents
   - Checks bash syntax
@@ -155,4 +189,3 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 - **Pre-commit Hooks**: Local development checks
   - Bash syntax validation
   - Prevents committing broken scripts
-
