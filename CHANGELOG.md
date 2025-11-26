@@ -52,6 +52,8 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.0.3] - 2025-11-26
+
 ### Fixed
 
 - **Path Resolution**: Fixed path resolution issue when running via npm/npx symlinks
