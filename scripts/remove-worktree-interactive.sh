@@ -3,14 +3,14 @@
 # Script to list all git worktrees and remove the selected one
 #
 # This script displays all available git worktrees, allows you to select one,
-# and removes the worktree and its branch (except 'main').
+# and removes the worktree and its branch (except protected branches: main, master, develop).
 # Useful for cleaning up worktrees interactively.
 #
 # Behavior:
-# 1. Lists all worktrees, marking 'main' branch worktrees as [PROTECTED] and non-selectable
-# 2. User selects a worktree by number (only non-main worktrees are numbered)
+# 1. Lists all worktrees, marking protected branches (main, master, develop) as [PROTECTED] and non-selectable
+# 2. User selects a worktree by number (only non-protected worktrees are numbered)
 # 3. Checks and displays merge status of the reference branch (currently checked out branch) to detect safety
-#    Safety means: reference branch is merged into origin/main (directly or transitively via regular merges)
+#    Safety means: reference branch is merged into its base branch (develop for features/releases, main for hotfixes)
 #    Merge status is shown to the user before deletion confirmation
 #
 # If branch is merged (PR accepted):
@@ -25,11 +25,12 @@
 # 6. Removes worktree directory and deletes the branch (local and optionally remote) if confirmed
 #
 # Merge detection (for the reference branch currently checked out in the worktree):
-# - Detects if the reference branch is merged directly into origin/main
-# - Detects transitive merges (A→B→main) when regular merge commits are used
+# - Determines base branch based on git flow conventions (develop for features/releases, main for hotfixes)
+# - Detects if the reference branch is merged directly into origin/base
+# - Detects transitive merges (A→B→base) when regular merge commits are used
 # - Does NOT detect squash merges (commits are recreated, not preserved in history)
 #   If a branch was merged via squash, it won't be detected as merged, but the
-#   work is still in main, so it's safe to delete (user decides based on context)
+#   work is still in the base branch, so it's safe to delete (user decides based on context)
 #
 # Usage: ./scripts/remove-worktree-interactive.sh
 
@@ -38,6 +39,56 @@ set -e
 # Source shared editor utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/editor-common.sh"
+
+# Determine base branch based on git flow conventions
+# Strict git flow: features/releases branch from develop, hotfixes branch from main
+# Light git flow: everything branches from main
+get_base_branch() {
+    local branch="$1"
+    
+    # Check for hotfix branches (always branch from main/master in strict git flow)
+    if [[ "$branch" == hotfix/* ]]; then
+        # Try main first, then master
+        if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            echo "main"
+        elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+            echo "master"
+        else
+            echo "main"  # Default fallback
+        fi
+    # Check for feature or release branches (branch from develop in strict git flow)
+    elif [[ "$branch" == feature/* ]] || [[ "$branch" == release/* ]]; then
+        # Try develop first (strict git flow)
+        if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
+            echo "develop"
+        # Fallback to main (light git flow)
+        elif git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            echo "main"
+        elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+            echo "master"
+        else
+            echo "main"  # Default fallback
+        fi
+    # Default: use main/master (for other branch types like chore/, bugfix/, etc.)
+    else
+        if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            echo "main"
+        elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+            echo "master"
+        else
+            echo "main"  # Default fallback
+        fi
+    fi
+}
+
+# Check if branch is protected (main, master, or develop)
+is_protected_branch() {
+    local branch="$1"
+    if [ "$branch" = "main" ] || [ "$branch" = "master" ] || [ "$branch" = "develop" ]; then
+        return 0
+    fi
+    return 1
+}
 
 # Check for unexpected arguments
 if [ $# -gt 0 ]; then
@@ -113,8 +164,8 @@ for i in "${!PATHS[@]}"; do
     WORKTREE_ABS_PATH=$(cd "${PATHS[$i]}" 2>/dev/null && pwd || echo "${PATHS[$i]}")
     CURRENT_ABS_PATH=$(cd "$CURRENT_WORKTREE" && pwd)
 
-    # Skip main branch and current worktree
-    if [ "${BRANCHES[$i]}" != "main" ] && [ "$WORKTREE_ABS_PATH" != "$CURRENT_ABS_PATH" ]; then
+    # Skip protected branches (main, master, develop) and current worktree
+    if ! is_protected_branch "${BRANCHES[$i]}" && [ "$WORKTREE_ABS_PATH" != "$CURRENT_ABS_PATH" ]; then
         SELECTABLE_PATHS+=("${PATHS[$i]}")
         SELECTABLE_BRANCHES+=("${BRANCHES[$i]}")
         SELECTABLE_INDICES+=("$i")
@@ -139,7 +190,7 @@ for i in "${!PATHS[@]}"; do
     WORKTREE_ABS_PATH=$(cd "${PATHS[$i]}" 2>/dev/null && pwd || echo "${PATHS[$i]}")
     CURRENT_ABS_PATH=$(cd "$CURRENT_WORKTREE" && pwd)
 
-    if [ "${BRANCHES[$i]}" != "main" ] && [ "$WORKTREE_ABS_PATH" != "$CURRENT_ABS_PATH" ]; then
+    if ! is_protected_branch "${BRANCHES[$i]}" && [ "$WORKTREE_ABS_PATH" != "$CURRENT_ABS_PATH" ]; then
         BRANCH_INFO=""
         if [ -n "${BRANCHES[$i]}" ]; then
             BRANCH_INFO=" [${BRANCHES[$i]}]"
@@ -164,8 +215,8 @@ for i in "${!PATHS[@]}"; do
         BRANCH_INFO=" (detached HEAD)"
     fi
 
-    if [ "${BRANCHES[$i]}" = "main" ]; then
-        echo "  [PROTECTED] ${PATHS[$i]}${BRANCH_INFO} (main branch)"
+    if is_protected_branch "${BRANCHES[$i]}"; then
+        echo "  [PROTECTED] ${PATHS[$i]}${BRANCH_INFO} (${BRANCHES[$i]} branch)"
     elif [ "$WORKTREE_ABS_PATH" = "$CURRENT_ABS_PATH" ]; then
         echo "  [PROTECTED] ${PATHS[$i]}${BRANCH_INFO} (current worktree)"
     fi
@@ -243,24 +294,27 @@ if [ -z "$SELECTED_BRANCH" ]; then
     echo "✓ Worktree removed"
 else
     # Check merge status first to determine confirmation level
-    # Fetch latest origin/main to ensure accurate merge detection
+    # Determine the appropriate base branch for merge detection
+    BASE_BRANCH=$(get_base_branch "$SELECTED_BRANCH")
+    
+    # Fetch latest origin/base to ensure accurate merge detection
     IS_MERGED=false
     COMMIT_COUNT=0
-    if git fetch origin main --quiet 2>/dev/null; then
-        # Check if branch has commits beyond main (if not, it's just a pointer to main, not merged)
+    if git fetch origin "$BASE_BRANCH" --quiet 2>/dev/null; then
+        # Check if branch has commits beyond base (if not, it's just a pointer to base, not merged)
         BRANCH_COMMIT=$(git rev-parse "$SELECTED_BRANCH" 2>/dev/null)
-        MAIN_COMMIT=$(git rev-parse "origin/main" 2>/dev/null)
+        BASE_COMMIT=$(git rev-parse "origin/$BASE_BRANCH" 2>/dev/null)
 
-        if [ "$BRANCH_COMMIT" = "$MAIN_COMMIT" ]; then
-            # Branch points to same commit as main - freshly created, no work done
+        if [ "$BRANCH_COMMIT" = "$BASE_COMMIT" ]; then
+            # Branch points to same commit as base - freshly created, no work done
             IS_MERGED=false
             COMMIT_COUNT=0
         else
-            # Count commits not in main
-            COMMIT_COUNT=$(git rev-list --count "origin/main..$SELECTED_BRANCH" 2>/dev/null || echo "0")
+            # Count commits not in base
+            COMMIT_COUNT=$(git rev-list --count "origin/$BASE_BRANCH..$SELECTED_BRANCH" 2>/dev/null || echo "0")
 
-            if git merge-base --is-ancestor "$SELECTED_BRANCH" "origin/main" 2>/dev/null; then
-                # Branch is an ancestor of main - likely merged
+            if git merge-base --is-ancestor "$SELECTED_BRANCH" "origin/$BASE_BRANCH" 2>/dev/null; then
+                # Branch is an ancestor of base - likely merged
                 IS_MERGED=true
             fi
         fi
@@ -269,14 +323,14 @@ else
     # Show information about what will be deleted
     echo ""
     if [ "$IS_MERGED" = true ]; then
-        echo "ℹ️  Branch '$SELECTED_BRANCH' is merged into origin/main (PR accepted)"
-        echo "   Safe to delete - the work is already in main"
+        echo "ℹ️  Branch '$SELECTED_BRANCH' is merged into origin/$BASE_BRANCH (PR accepted)"
+        echo "   Safe to delete - the work is already in $BASE_BRANCH"
     elif [ "$COMMIT_COUNT" -eq 0 ]; then
         echo "ℹ️  Branch '$SELECTED_BRANCH' has 0 commits (freshly created or already merged)"
         echo "   Safe to delete - no uncommitted work"
     else
         echo "⚠️  WARNING: This operation is DESTRUCTIVE!"
-        echo "   Branch '$SELECTED_BRANCH' has $COMMIT_COUNT commit(s) not in origin/main"
+        echo "   Branch '$SELECTED_BRANCH' has $COMMIT_COUNT commit(s) not in origin/$BASE_BRANCH"
         echo "   Removing it will DELETE this uncommitted work!"
     fi
     echo ""
@@ -316,9 +370,9 @@ else
     if [ "$REMOTE_EXISTS" = true ]; then
         echo ""
         if [ "$IS_MERGED" = true ]; then
-            echo "ℹ️  Remote branch 'origin/$SELECTED_BRANCH' exists and is merged into origin/main"
+            echo "ℹ️  Remote branch 'origin/$SELECTED_BRANCH' exists and is merged into origin/$BASE_BRANCH"
             echo "   (Includes direct merges and transitive merges via regular merge commits)"
-            echo "   Safe to delete - the work is already in main"
+            echo "   Safe to delete - the work is already in $BASE_BRANCH"
             echo ""
             echo "⚠️  Note: Deleting remote branch affects the shared repository"
             read -p "Delete remote branch? (y/N): " -n 1 -r
@@ -331,12 +385,12 @@ else
         else
             echo "⚠️  Remote branch 'origin/$SELECTED_BRANCH' exists but merge status is unclear"
             echo "   Possible reasons:"
-            echo "   - Not merged into origin/main"
+            echo "   - Not merged into origin/$BASE_BRANCH"
             echo "   - Merged via squash/rebase (commits recreated, not detected)"
             echo "   - Part of an open or closed PR"
             echo ""
             echo "   ⚠️  Deleting it may break an open PR or remove unmerged work"
-            echo "   (If it was merged via squash, the work is in main but won't be detected)"
+            echo "   (If it was merged via squash, the work is in $BASE_BRANCH but won't be detected)"
             echo ""
             echo "⚠️  WARNING: Deleting remote branch affects the shared repository and may affect others"
             read -p "Type 'DELETE' to confirm remote branch deletion anyway (or 'N' to abort): " REMOTE_CONFIRMATION

@@ -6,7 +6,7 @@ A collection of bash scripts for managing git worktrees across multiple reposito
 
 This repository provides a set of reusable bash scripts that simplify git worktree management. Instead of manually creating worktrees, switching branches, and managing multiple working directories, these scripts automate the entire workflow:
 
-- **Create worktrees** from the main branch with automatic editor opening
+- **Create worktrees** with automatic base branch detection (supports both light and strict git flow)
 - **Open existing worktrees** interactively from a list
 - **Remove worktrees** safely with merge detection and branch cleanup
 - **Cross-platform support** for macOS, Linux, and Windows
@@ -58,6 +58,24 @@ npx git-worktree remove
 - `npx git-worktree-open` (alias for `git-worktree open`)
 - `npx git-worktree-remove` (alias for `git-worktree remove`)
 
+## Git Flow Support
+
+This project supports both **light git flow** and **strict git flow** workflows:
+
+### Light Git Flow
+- All branches (features, hotfixes, etc.) branch from `main`
+- Works out of the box for repositories using a simple `main` branch workflow
+
+### Strict Git Flow
+- **Feature branches** (`feature/*`) and **release branches** (`release/*`) branch from `develop`
+- **Hotfix branches** (`hotfix/*`) branch from `main` (or `master`)
+- The scripts automatically detect which workflow your repository uses based on which branches exist
+
+**How it works:**
+- When creating a feature branch, the script checks if `develop` exists. If it does, it uses `develop` as the base (strict git flow). Otherwise, it falls back to `main` (light git flow).
+- When creating a hotfix branch, the script always uses `main` or `master` as the base.
+- Merge detection in removal scripts uses the same logic to check merges against the appropriate base branch.
+
 ## Working with Multiple Branches (Git Worktrees)
 
 When working on multiple features simultaneously or when you need separate editor windows for different branches, use **git worktrees**. This allows you to have multiple working directories for the same repository, each on a different branch.
@@ -67,7 +85,9 @@ When working on multiple features simultaneously or when you need separate edito
 Use the provided command to create a worktree and open it in your preferred code editor (Cursor or VS Code):
 
 ```bash
-# Create worktree with new branch (always created from latest main)
+# Create worktree with new branch
+# - Feature/release branches: created from 'develop' (strict git flow) or 'main' (light git flow)
+# - Hotfix branches: created from 'main' or 'master'
 npx git-worktree create feature/my-feature
 
 # Create worktree with custom worktree directory name
@@ -93,29 +113,35 @@ npx git-worktree create feature/my-feature my-feature-worktree
 
 The `git-worktree create` command automates the following main steps:
 
-1. **Validates prerequisites**: Checks if branch/worktree exists, ensures `main` branch exists, and worktree path is available
+1. **Validates prerequisites**: Checks if branch/worktree exists, ensures base branch exists, and worktree path is available
 
-2. **Handles existing branches**: If branch already exists with commits, offers interactive options:
+2. **Determines base branch**: Based on git flow conventions:
+   - **Feature branches** (`feature/*`) and **release branches** (`release/*`): Use `develop` if it exists (strict git flow), otherwise fall back to `main` (light git flow)
+   - **Hotfix branches** (`hotfix/*`): Use `main` or `master`
+   - **Other branches**: Default to `main` or `master`
+
+3. **Handles existing branches**: If branch already exists with commits, offers interactive options:
 
    - **Create worktree for existing branch** (default): Creates a worktree and checks out the existing branch
    - **Checkout in current repo**: Checks out the branch in your current repository
-   - **Remove existing branch**: Removes the branch and creates a new one from main
+   - **Remove existing branch**: Removes the branch and creates a new one from the base branch
    - If a worktree already exists for the branch, offers to open it directly
 
-3. **Updates main branch**: For new branches, pulls the latest changes from `origin/main` to ensure you have the most recent code
+4. **Updates base branch**: For new branches, pulls the latest changes from the base branch to ensure you have the most recent code
 
-4. **Creates worktree**: Creates a new git worktree:
+5. **Creates worktree**: Creates a new git worktree:
 
-   - For new branches: Creates from the updated `main` branch with your specified branch name
+   - For new branches: Creates from the updated base branch with your specified branch name
    - For existing branches: Creates worktree and checks out the existing branch (fetches from remote if needed)
 
-5. **Sets up development environment**: Runs repository-specific setup script if `scripts/setup-worktree.sh` exists
+6. **Sets up development environment**: Runs repository-specific setup script if `scripts/setup-worktree.sh` exists
 
-6. **Opens in editor**: Automatically opens the worktree directory in Cursor or VS Code
+7. **Opens in editor**: Automatically opens the worktree directory in Cursor or VS Code
 
 **Important**:
 
-- For new branches, the script always creates worktrees from the `main` branch (after pulling the latest changes) to ensure a consistent and up-to-date base
+- The script automatically detects whether your repository uses strict git flow (with `develop`) or light git flow (just `main`)
+- For new branches, the script creates worktrees from the appropriate base branch (after pulling the latest changes) to ensure a consistent and up-to-date base
 - For existing branches, the script creates a worktree for the existing branch, preserving any existing commits
 
 ### Opening Existing Worktrees
@@ -182,17 +208,19 @@ npx git-worktree remove
 The command will:
 
 1. Display all available worktrees with their branch names
-2. Protect `main` branch and current worktree from deletion (marked as `[PROTECTED]`)
+2. Protect base branches (`main`, `master`, `develop`) and current worktree from deletion (marked as `[PROTECTED]`)
 3. Prompt you to select a worktree by number (only non-protected worktrees are selectable)
-4. Show the selected worktree details and ask for confirmation
-5. Remove the worktree and its associated branch
+4. Check merge status against the appropriate base branch (develop for features/releases, main for hotfixes)
+5. Show the selected worktree details and ask for confirmation
+6. Remove the worktree and its associated branch
 
 **Safety Features:**
 
-- Cannot remove `main` branch worktrees
+- Cannot remove protected branch worktrees (`main`, `master`, `develop`)
 - Cannot remove the worktree you're currently inside (prevents shell errors)
 - Must switch to a different worktree before removing your current one
 - Handles missing worktree directories gracefully (stale git entries are cleaned up automatically)
+- Merge detection uses the correct base branch based on git flow conventions
 
 **Note:** If a worktree directory was manually deleted, the command will detect this and clean up the stale git entries automatically.
 
@@ -225,13 +253,14 @@ cd ~/my-project
 npx git-worktree create feature/add-flac-support
 
 # This command will:
-# - Pull latest changes from origin/main
+# - Detect base branch (develop for features in strict git flow, main in light git flow)
+# - Pull latest changes from origin/base
 # - Create new directory: ~/my-project-feature-add-flac-support
 # - Open new editor window (Cursor or VS Code) with that directory
-# - Check out feature/add-flac-support branch from updated main
+# - Check out feature/add-flac-support branch from updated base branch
 
 # Now you can work in both windows:
-# - Main window: main branch
+# - Main window: base branch (main or develop)
 # - New window: feature/add-flac-support branch
 
 # When done, remove the worktree

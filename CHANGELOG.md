@@ -52,6 +52,15 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+### Added
+
+- **Strict Git Flow Support**: Added automatic detection and support for strict git flow workflows
+  - Feature branches (`feature/*`) and release branches (`release/*`) now branch from `develop` when it exists (strict git flow)
+  - Falls back to `main` if `develop` doesn't exist (light git flow) for backward compatibility
+  - Hotfix branches (`hotfix/*`) always branch from `main` or `master`
+  - Merge detection in removal scripts now uses the appropriate base branch based on git flow conventions
+  - Protected branches now include `main`, `master`, and `develop` to prevent accidental deletion
+
 ## [1.0.3] - 2025-11-26
 
 ### Fixed

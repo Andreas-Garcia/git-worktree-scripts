@@ -1,17 +1,23 @@
 #!/bin/bash
 
-# Script to create a git worktree from main and open it in a code editor (Cursor or VS Code)
+# Script to create a git worktree and open it in a code editor (Cursor or VS Code)
 #
 # This script automates the process of creating a new git worktree, setting up the
 # development environment, and opening it in your preferred editor (Cursor or VS Code).
-# All worktrees are created from the main branch to ensure a consistent base.
+# 
+# Git Flow Support:
+# - Feature branches (feature/*) and release branches (release/*) branch from 'develop' (strict git flow)
+#   or 'main' (light git flow) depending on what exists in the repository
+# - Hotfix branches (hotfix/*) branch from 'main' or 'master' (strict git flow)
+# - Other branches default to 'main' or 'master'
 #
 # Usage: ./scripts/create-worktree.sh <branch-name> [worktree-name]
 #
 # Main steps:
-# 1. Validates prerequisites (branch doesn't exist, main branch exists, worktree path available)
-# 2. Pulls latest changes from main branch to ensure up-to-date base
-# 3. Creates git worktree from main branch with the new branch name
+# 1. Validates prerequisites (branch doesn't exist, base branch exists, worktree path available)
+# 2. Determines base branch based on git flow conventions (develop for features/releases, main for hotfixes)
+# 3. Pulls latest changes from base branch to ensure up-to-date base
+# 4. Creates git worktree from base branch with the new branch name
 # 4. Sets up Python virtual environment and installs dependencies
 # 5. Opens the worktree directory in your editor (Cursor or VS Code)
 #
@@ -48,6 +54,49 @@ WORKTREE_NAME="${2:-${BRANCH_NAME#feature/}}"
 WORKTREE_NAME="${WORKTREE_NAME#chore/}"
 WORKTREE_NAME="${WORKTREE_NAME#hotfix/}"
 
+# Determine base branch based on git flow conventions
+# Strict git flow: features/releases branch from develop, hotfixes branch from main
+# Light git flow: everything branches from main
+get_base_branch() {
+    local branch="$1"
+    
+    # Check for hotfix branches (always branch from main/master in strict git flow)
+    if [[ "$branch" == hotfix/* ]]; then
+        # Try main first, then master
+        if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            echo "main"
+        elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+            echo "master"
+        else
+            echo "main"  # Default fallback
+        fi
+    # Check for feature or release branches (branch from develop in strict git flow)
+    elif [[ "$branch" == feature/* ]] || [[ "$branch" == release/* ]]; then
+        # Try develop first (strict git flow)
+        if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
+            echo "develop"
+        # Fallback to main (light git flow)
+        elif git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            echo "main"
+        elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+            echo "master"
+        else
+            echo "main"  # Default fallback
+        fi
+    # Default: use main/master (for other branch types like chore/, bugfix/, etc.)
+    else
+        if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            echo "main"
+        elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+            echo "master"
+        else
+            echo "main"  # Default fallback
+        fi
+    fi
+}
+
+BASE_BRANCH=$(get_base_branch "$BRANCH_NAME")
+
 # Default worktree name if still empty
 if [ -z "$WORKTREE_NAME" ]; then
     WORKTREE_NAME="worktree-$(date +%s)"
@@ -60,20 +109,20 @@ WORKTREE_PATH="../${REPO_NAME}-${WORKTREE_NAME}"
 if [ -d "$WORKTREE_PATH" ]; then
     echo "Warning: Worktree already exists at $WORKTREE_PATH"
 
-    # Check if branch has commits beyond main
+    # Check if branch has commits beyond base branch
     COMMIT_COUNT=0
     if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
         BRANCH_COMMIT=$(git rev-parse "$BRANCH_NAME" 2>/dev/null)
-        MAIN_COMMIT=$(git rev-parse "origin/main" 2>/dev/null || git rev-parse "main" 2>/dev/null)
+        BASE_COMMIT=$(git rev-parse "origin/$BASE_BRANCH" 2>/dev/null || git rev-parse "$BASE_BRANCH" 2>/dev/null)
 
-        if [ "$BRANCH_COMMIT" != "$MAIN_COMMIT" ]; then
-            COMMIT_COUNT=$(git rev-list --count "$MAIN_COMMIT..$BRANCH_NAME" 2>/dev/null || echo "0")
+        if [ "$BRANCH_COMMIT" != "$BASE_COMMIT" ]; then
+            COMMIT_COUNT=$(git rev-list --count "$BASE_COMMIT..$BRANCH_NAME" 2>/dev/null || echo "0")
         fi
     fi
 
     echo ""
     if [ "$COMMIT_COUNT" -gt 0 ]; then
-        echo "⚠️  WARNING: Branch '$BRANCH_NAME' has $COMMIT_COUNT commit(s) not in main!"
+        echo "⚠️  WARNING: Branch '$BRANCH_NAME' has $COMMIT_COUNT commit(s) not in $BASE_BRANCH!"
         echo "   Removing it will DELETE this work permanently."
         echo ""
     else
@@ -110,12 +159,12 @@ if [ "$BRANCH_EXISTS_LOCAL" = true ] || [ "$BRANCH_EXISTS_REMOTE" = true ]; then
     if [ "$BRANCH_EXISTS_LOCAL" = true ]; then
         echo "  - Local branch exists"
 
-        # Check if branch has commits beyond main
+        # Check if branch has commits beyond base branch
         BRANCH_COMMIT=$(git rev-parse "$BRANCH_NAME" 2>/dev/null)
-        MAIN_COMMIT=$(git rev-parse "origin/main" 2>/dev/null || git rev-parse "main" 2>/dev/null)
+        BASE_COMMIT=$(git rev-parse "origin/$BASE_BRANCH" 2>/dev/null || git rev-parse "$BASE_BRANCH" 2>/dev/null)
 
-        if [ "$BRANCH_COMMIT" != "$MAIN_COMMIT" ]; then
-            COMMIT_COUNT=$(git rev-list --count "$MAIN_COMMIT..$BRANCH_NAME" 2>/dev/null || echo "0")
+        if [ "$BRANCH_COMMIT" != "$BASE_COMMIT" ]; then
+            COMMIT_COUNT=$(git rev-list --count "$BASE_COMMIT..$BRANCH_NAME" 2>/dev/null || echo "0")
             if [ "$COMMIT_COUNT" -gt 0 ]; then
                 HAS_COMMITS=true
                 echo "     ⚠️  Has $COMMIT_COUNT commit(s) - removing will DELETE this work!"
@@ -127,9 +176,9 @@ if [ "$BRANCH_EXISTS_LOCAL" = true ] || [ "$BRANCH_EXISTS_REMOTE" = true ]; then
         # Check remote branch commits if local doesn't have commits
         if [ "$HAS_COMMITS" = false ] && [ "$BRANCH_EXISTS_LOCAL" = false ]; then
             REMOTE_BRANCH_COMMIT=$(git rev-parse "origin/$BRANCH_NAME" 2>/dev/null)
-            MAIN_COMMIT=$(git rev-parse "origin/main" 2>/dev/null || git rev-parse "main" 2>/dev/null)
-            if [ "$REMOTE_BRANCH_COMMIT" != "$MAIN_COMMIT" ]; then
-                COMMIT_COUNT=$(git rev-list --count "$MAIN_COMMIT..origin/$BRANCH_NAME" 2>/dev/null || echo "0")
+            BASE_COMMIT=$(git rev-parse "origin/$BASE_BRANCH" 2>/dev/null || git rev-parse "$BASE_BRANCH" 2>/dev/null)
+            if [ "$REMOTE_BRANCH_COMMIT" != "$BASE_COMMIT" ]; then
+                COMMIT_COUNT=$(git rev-list --count "$BASE_COMMIT..origin/$BRANCH_NAME" 2>/dev/null || echo "0")
                 if [ "$COMMIT_COUNT" -gt 0 ]; then
                     HAS_COMMITS=true
                     echo "     ⚠️  Has $COMMIT_COUNT commit(s) - removing will DELETE this work!"
@@ -248,26 +297,26 @@ if [ "$BRANCH_EXISTS_LOCAL" = true ] || [ "$BRANCH_EXISTS_REMOTE" = true ]; then
     fi
 fi
 
-# Ensure main branch exists
-if ! git show-ref --verify --quiet "refs/heads/main" && ! git show-ref --verify --quiet "refs/remotes/origin/main"; then
-    echo "Error: 'main' branch does not exist locally or remotely"
+# Ensure base branch exists
+if ! git show-ref --verify --quiet "refs/heads/$BASE_BRANCH" && ! git show-ref --verify --quiet "refs/remotes/origin/$BASE_BRANCH"; then
+    echo "Error: '$BASE_BRANCH' branch does not exist locally or remotely"
     exit 1
 fi
 
-# Pull latest changes from main branch (only if creating new branch)
+# Pull latest changes from base branch (only if creating new branch)
 if [ "$CREATE_FOR_EXISTING_BRANCH" != true ]; then
-    echo "Pulling latest changes from main branch..."
+    echo "Pulling latest changes from $BASE_BRANCH branch..."
     CURRENT_BRANCH=$(git branch --show-current)
-    if [ "$CURRENT_BRANCH" != "main" ]; then
-        echo "Switching to main branch to pull latest changes..."
-        git checkout main
+    if [ "$CURRENT_BRANCH" != "$BASE_BRANCH" ]; then
+        echo "Switching to $BASE_BRANCH branch to pull latest changes..."
+        git checkout "$BASE_BRANCH"
     fi
-    git pull origin main
-    echo "✓ Main branch updated"
+    git pull origin "$BASE_BRANCH"
+    echo "✓ $BASE_BRANCH branch updated"
     echo ""
 
     # Switch back to original branch if needed
-    if [ "$CURRENT_BRANCH" != "main" ] && [ -n "$CURRENT_BRANCH" ]; then
+    if [ "$CURRENT_BRANCH" != "$BASE_BRANCH" ] && [ -n "$CURRENT_BRANCH" ]; then
         git checkout "$CURRENT_BRANCH"
     fi
 fi
@@ -283,8 +332,8 @@ if [ "$CREATE_FOR_EXISTING_BRANCH" = true ]; then
     # Create worktree and checkout existing branch
     git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
 else
-    echo "Creating worktree from main for new branch: $BRANCH_NAME"
-    git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" main
+    echo "Creating worktree from $BASE_BRANCH for new branch: $BRANCH_NAME"
+    git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" "$BASE_BRANCH"
 fi
 
 # Get absolute path
