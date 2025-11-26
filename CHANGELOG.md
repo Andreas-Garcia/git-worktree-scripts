@@ -52,6 +52,8 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-01-27
+
 ### Added
 
 - **Interactive Branch Creation**: Added interactive mode for creating worktrees
