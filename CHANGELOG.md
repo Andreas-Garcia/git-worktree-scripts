@@ -52,6 +52,15 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-11-27
+
+### Fixed
+
+- **Script Execution Error**: Fixed "local: can only be used in a function" error
+  - Removed `local` keyword from main script body in removal scripts
+  - `local` can only be used inside functions, not in main script scope
+  - Fixes error when removing worktrees in strict Git Flow repositories
+
 ## [1.2.0] - 2025-11-27
 
 ### Added
