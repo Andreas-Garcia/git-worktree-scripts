@@ -52,6 +52,16 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.2.3] - 2025-11-27
+
+### Changed
+
+- **Non-Git Flow Branch Removal**: Changed from preventing to warning with merge base selection
+  - Shows warning for non-Git Flow branch types in strict Git Flow repos
+  - Prompts user to select which branch to check merge status against (develop/dev or main/master)
+  - Allows removal after merge check instead of blocking it
+  - User can choose the appropriate base branch based on where the branch was created from
+
 ## [1.2.2] - 2025-11-27
 
 ### Fixed
