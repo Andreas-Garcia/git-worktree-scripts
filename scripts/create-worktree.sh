@@ -55,8 +55,9 @@ if [ "$has_develop" = true ]; then
     echo "  1) feature/*  (branches from develop/dev)"
     echo "  2) release/*  (branches from develop/dev)"
     echo "  3) hotfix/*   (branches from main/master)"
+    echo "  4) chore/*    (branches from main/master)"
     echo ""
-    read -p "Choose option (1-3): " -n 1 -r
+    read -p "Choose option (1-4): " -n 1 -r
     echo ""
     
     case $REPLY in
@@ -68,6 +69,9 @@ if [ "$has_develop" = true ]; then
             ;;
         3)
             BRANCH_TYPE="hotfix"
+            ;;
+        4)
+            BRANCH_TYPE="chore"
             ;;
         *)
             echo "Invalid selection. Aborted."
@@ -141,8 +145,8 @@ get_base_branch() {
         develop_branch="dev"
     fi
     
-    # Check for hotfix branches (always branch from main/master in strict git flow)
-    if [[ "$branch" == hotfix/* ]]; then
+    # Check for hotfix or chore branches (always branch from main/master in strict git flow)
+    if [[ "$branch" == hotfix/* ]] || [[ "$branch" == chore/* ]]; then
         # Try main first, then master
         if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             echo "main"
@@ -167,8 +171,8 @@ get_base_branch() {
         else
             echo "main"  # Default fallback
         fi
-    # Default: for other branch types (chore/, bugfix/, etc.), use main/master
-    # Note: This case should not be reached in strict Git Flow repos due to validation above
+    # Default: for other branch types (bugfix/, etc.), use main/master
+    # Note: chore/* is handled above, this case is for other non-Git Flow types
     else
         if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             echo "main"

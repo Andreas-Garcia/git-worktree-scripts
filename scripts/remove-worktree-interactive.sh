@@ -46,8 +46,8 @@ source "$SCRIPT_DIR/editor-common.sh"
 get_base_branch() {
     local branch="$1"
     
-    # Check for hotfix branches (always branch from main/master in strict git flow)
-    if [[ "$branch" == hotfix/* ]]; then
+    # Check for hotfix or chore branches (always branch from main/master in strict git flow)
+    if [[ "$branch" == hotfix/* ]] || [[ "$branch" == chore/* ]]; then
         # Try main first, then master
         if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             echo "main"
@@ -72,8 +72,8 @@ get_base_branch() {
         else
             echo "main"  # Default fallback
         fi
-    # Default: for other branch types (chore/, bugfix/, etc.), use main/master
-    # These are not part of strict Git Flow spec, so they default to main even if develop/dev exists
+    # Default: for other branch types (bugfix/, etc.), use main/master
+    # Note: chore/* is handled above, this case is for other non-Git Flow types
     else
         if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             echo "main"
@@ -260,7 +260,7 @@ fi
 
 # In strict Git Flow, warn about non-Git Flow branch types and ask for base branch
 if [ "$has_develop" = true ]; then
-    if [[ ! "$SELECTED_BRANCH" =~ ^(feature|release|hotfix)/ ]] && ! is_protected_branch "$SELECTED_BRANCH"; then
+    if [[ ! "$SELECTED_BRANCH" =~ ^(feature|release|hotfix|chore)/ ]] && ! is_protected_branch "$SELECTED_BRANCH"; then
         branch_type="${SELECTED_BRANCH%%/*}"
         develop_branch=""
         if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
@@ -270,7 +270,7 @@ if [ "$has_develop" = true ]; then
         fi
         
         echo "⚠️  Warning: '$branch_type/*' is not a valid Git Flow branch type." >&2
-        echo "   Git Flow only supports: feature/*, release/*, and hotfix/*" >&2
+        echo "   Git Flow supports: feature/*, release/*, hotfix/*, and chore/*" >&2
         echo "" >&2
         echo "   Which branch should merge status be checked against?" >&2
         if [ -n "$develop_branch" ]; then

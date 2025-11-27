@@ -52,6 +52,16 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.2.5] - 2025-11-27
+
+### Changed
+
+- **Strict Git Flow Validation**: Added `chore/*` as a valid branch type in strict Git Flow repositories
+  - `chore/*` branches can now be created in strict Git Flow mode (option 4 in interactive creation)
+  - `chore/*` branches branch from `main`/`master`, similar to `hotfix/*` branches
+  - Updated validation to accept `chore/*` alongside `feature/*`, `release/*`, and `hotfix/*`
+  - Updated removal scripts to recognize `chore/*` as a valid Git Flow branch type
+
 ## [1.2.4] - 2025-11-27
 
 ### Fixed
