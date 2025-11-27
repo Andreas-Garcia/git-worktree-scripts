@@ -251,7 +251,7 @@ SELECTED_PATH="${SELECTABLE_PATHS[$SELECTED_INDEX]}"
 SELECTED_BRANCH="${SELECTABLE_BRANCHES[$SELECTED_INDEX]}"
 
 # Check if repository uses strict git flow and validate branch name
-local has_develop=false
+has_develop=false
 if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
     has_develop=true
 elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then

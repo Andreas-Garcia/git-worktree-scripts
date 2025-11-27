@@ -55,7 +55,7 @@ if [ -z "$BRANCH_NAME" ]; then
 fi
 
 # Check if repository uses strict git flow and validate branch name
-local has_develop=false
+has_develop=false
 if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
     has_develop=true
 elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
@@ -65,8 +65,8 @@ fi
 # In strict Git Flow, prevent removal of non-Git Flow branch types
 if [ "$has_develop" = true ]; then
     if [[ ! "$BRANCH_NAME" =~ ^(feature|release|hotfix)/ ]] && [[ ! "$BRANCH_NAME" =~ ^(main|master|develop|dev)$ ]]; then
-        local branch_type="${BRANCH_NAME%%/*}"
-        local branch_suffix="${BRANCH_NAME#*/}"
+        branch_type="${BRANCH_NAME%%/*}"
+        branch_suffix="${BRANCH_NAME#*/}"
         echo "❌ Error: '$branch_type/*' is not a valid Git Flow branch type." >&2
         echo "   Git Flow only supports: feature/*, release/*, and hotfix/*" >&2
         echo "" >&2

@@ -37,7 +37,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 REPO_NAME=$(basename "$REPO_ROOT")
 
 # Check if repository uses strict git flow (has develop/dev branch)
-local has_develop=false
+has_develop=false
 if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
     has_develop=true
 elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
