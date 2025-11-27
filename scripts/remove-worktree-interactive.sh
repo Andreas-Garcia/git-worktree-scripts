@@ -261,8 +261,8 @@ fi
 # In strict Git Flow, prevent removal of non-Git Flow branch types
 if [ "$has_develop" = true ]; then
     if [[ ! "$SELECTED_BRANCH" =~ ^(feature|release|hotfix)/ ]] && ! is_protected_branch "$SELECTED_BRANCH"; then
-        local branch_type="${SELECTED_BRANCH%%/*}"
-        local branch_suffix="${SELECTED_BRANCH#*/}"
+        branch_type="${SELECTED_BRANCH%%/*}"
+        branch_suffix="${SELECTED_BRANCH#*/}"
         echo "❌ Error: '$branch_type/*' is not a valid Git Flow branch type." >&2
         echo "   Git Flow only supports: feature/*, release/*, and hotfix/*" >&2
         echo "" >&2
