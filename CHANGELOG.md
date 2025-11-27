@@ -52,6 +52,14 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.2.2] - 2025-11-27
+
+### Fixed
+
+- **Script Execution Error**: Fixed remaining "local: can only be used in a function" error
+  - Removed remaining `local` keywords from main script body in remove-worktree-interactive.sh
+  - Completes the fix from v1.2.1
+
 ## [1.2.1] - 2025-11-27
 
 ### Fixed
