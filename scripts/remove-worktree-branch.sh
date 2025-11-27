@@ -54,6 +54,51 @@ if [ -z "$BRANCH_NAME" ]; then
     exit 1
 fi
 
+# Determine base branch based on git flow conventions
+# Strict git flow: features/releases branch from develop, hotfixes branch from main
+# Light git flow: everything branches from main
+get_base_branch() {
+    local branch="$1"
+    
+    # Check for hotfix branches (always branch from main/master in strict git flow)
+    if [[ "$branch" == hotfix/* ]]; then
+        # Try main first, then master
+        if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            echo "main"
+        elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+            echo "master"
+        else
+            echo "main"  # Default fallback
+        fi
+    # Check for feature or release branches (branch from develop/dev in strict git flow)
+    elif [[ "$branch" == feature/* ]] || [[ "$branch" == release/* ]]; then
+        # Try develop first (strict git flow standard)
+        if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
+            echo "develop"
+        # Try dev as alternative (some teams use this shorthand)
+        elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
+            echo "dev"
+        # Fallback to main (light git flow)
+        elif git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            echo "main"
+        elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+            echo "master"
+        else
+            echo "main"  # Default fallback
+        fi
+    # Default: for other branch types (chore/, bugfix/, etc.), use main/master
+    # Note: This case should not be reached in strict Git Flow repos due to validation above
+    else
+        if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            echo "main"
+        elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+            echo "master"
+        else
+            echo "main"  # Default fallback
+        fi
+    fi
+}
+
 # Check if repository uses strict git flow and validate branch name
 has_develop=false
 if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
@@ -62,18 +107,62 @@ elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --q
     has_develop=true
 fi
 
-# In strict Git Flow, prevent removal of non-Git Flow branch types
+# In strict Git Flow, warn about non-Git Flow branch types and ask for base branch
+BASE_BRANCH=""
 if [ "$has_develop" = true ]; then
     if [[ ! "$BRANCH_NAME" =~ ^(feature|release|hotfix)/ ]] && [[ ! "$BRANCH_NAME" =~ ^(main|master|develop|dev)$ ]]; then
         branch_type="${BRANCH_NAME%%/*}"
-        branch_suffix="${BRANCH_NAME#*/}"
-        echo "❌ Error: '$branch_type/*' is not a valid Git Flow branch type." >&2
+        develop_branch=""
+        if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
+            develop_branch="develop"
+        elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --quiet "refs/remotes/origin/dev"; then
+            develop_branch="dev"
+        fi
+        
+        echo "⚠️  Warning: '$branch_type/*' is not a valid Git Flow branch type." >&2
         echo "   Git Flow only supports: feature/*, release/*, and hotfix/*" >&2
         echo "" >&2
-        echo "   This branch should be renamed to 'feature/$branch_suffix' before removal." >&2
-        echo "   To rename: git branch -m $BRANCH_NAME feature/$branch_suffix" >&2
-        exit 1
+        echo "   Which branch should merge status be checked against?" >&2
+        if [ -n "$develop_branch" ]; then
+            echo "   1) $develop_branch (if this branch was created from $develop_branch)" >&2
+        fi
+        echo "   2) main/master (if this branch was created from main/master)" >&2
+        echo "" >&2
+        read -p "Choose option (1-2) [1]: " -n 1 -r
+        echo "" >&2
+        
+        if [[ $REPLY =~ ^[2]$ ]]; then
+            # Use main/master for merge check
+            if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+                BASE_BRANCH="main"
+            elif git show-ref --verify --quiet "refs/heads/master" || git show-ref --verify --quiet "refs/remotes/origin/master"; then
+                BASE_BRANCH="master"
+            else
+                echo "Error: main/master branch not found" >&2
+                exit 1
+            fi
+        else
+            # Use develop/dev for merge check (default)
+            if [ -n "$develop_branch" ]; then
+                BASE_BRANCH="$develop_branch"
+            else
+                echo "Error: develop/dev branch not found" >&2
+                exit 1
+            fi
+        fi
+        echo "" >&2
+    else
+        # Use standard get_base_branch function for Git Flow branches
+        BASE_BRANCH=$(get_base_branch "$BRANCH_NAME")
     fi
+else
+    # Light Git Flow - use get_base_branch function
+    BASE_BRANCH=$(get_base_branch "$BRANCH_NAME")
+fi
+
+# If BASE_BRANCH is still not set, use get_base_branch as fallback
+if [ -z "$BASE_BRANCH" ]; then
+    BASE_BRANCH=$(get_base_branch "$BRANCH_NAME")
 fi
 
 # Infer worktree path if not provided
