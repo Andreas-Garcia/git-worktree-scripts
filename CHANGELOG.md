@@ -52,6 +52,21 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.2.4] - 2025-11-27
+
+### Fixed
+
+- **Duplicate Prompt**: Fixed duplicate merge base branch prompt when removing worktrees
+  - Interactive removal script now passes selected base branch to branch removal script
+  - Prevents asking twice for the same information
+  - Added `--base-branch` argument support to `remove-worktree-branch.sh`
+
+### Improved
+
+- **Prompt Clarity**: Improved wording for merge base branch selection
+  - Now shows "develop (or dev)" or "dev (or develop)" to clarify both naming conventions are supported
+  - Makes it clearer which branch naming convention is being used
+
 ## [1.2.3] - 2025-11-27
 
 ### Changed

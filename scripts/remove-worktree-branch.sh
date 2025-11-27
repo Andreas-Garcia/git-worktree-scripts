@@ -5,12 +5,13 @@
 # This script removes both the worktree directory and the branch it was tracking.
 # It can remove local branches and optionally remote branches.
 #
-# Usage: ./scripts/remove-worktree-branch.sh <branch-name> [worktree-path] [--remove-remote]
+# Usage: ./scripts/remove-worktree-branch.sh <branch-name> [worktree-path] [--remove-remote] [--base-branch <branch>]
 #
 # Arguments:
 #   branch-name: The name of the branch to remove
 #   worktree-path: (Optional) Path to the worktree. If not provided, will be inferred from branch name
 #   --remove-remote: (Optional) Also remove the remote branch if it exists
+#   --base-branch: (Optional) Base branch to use for merge detection (skips prompt)
 #
 # Examples:
 #   ./scripts/remove-worktree-branch.sh feature/my-feature
@@ -27,12 +28,22 @@ REPO_NAME=$(basename "$REPO_ROOT")
 BRANCH_NAME=""
 WORKTREE_PATH=""
 REMOVE_REMOTE=false
+BASE_BRANCH_ARG=""
+SKIP_NEXT=false
 
 for arg in "$@"; do
+    if [ "$SKIP_NEXT" = true ]; then
+        BASE_BRANCH_ARG="$arg"
+        SKIP_NEXT=false
+        continue
+    fi
+    
     case $arg in
         --remove-remote)
             REMOVE_REMOTE=true
-            shift
+            ;;
+        --base-branch)
+            SKIP_NEXT=true
             ;;
         *)
             if [ -z "$BRANCH_NAME" ]; then
@@ -108,8 +119,12 @@ elif git show-ref --verify --quiet "refs/heads/dev" || git show-ref --verify --q
 fi
 
 # In strict Git Flow, warn about non-Git Flow branch types and ask for base branch
+# Skip if BASE_BRANCH_ARG was provided (called from interactive script)
 BASE_BRANCH=""
-if [ "$has_develop" = true ]; then
+if [ -n "$BASE_BRANCH_ARG" ]; then
+    # Base branch was provided, use it directly
+    BASE_BRANCH="$BASE_BRANCH_ARG"
+elif [ "$has_develop" = true ]; then
     if [[ ! "$BRANCH_NAME" =~ ^(feature|release|hotfix)/ ]] && [[ ! "$BRANCH_NAME" =~ ^(main|master|develop|dev)$ ]]; then
         branch_type="${BRANCH_NAME%%/*}"
         develop_branch=""
@@ -124,7 +139,11 @@ if [ "$has_develop" = true ]; then
         echo "" >&2
         echo "   Which branch should merge status be checked against?" >&2
         if [ -n "$develop_branch" ]; then
-            echo "   1) $develop_branch (if this branch was created from $develop_branch)" >&2
+            if [ "$develop_branch" = "develop" ]; then
+                echo "   1) develop (or dev) (if this branch was created from develop/dev)" >&2
+            else
+                echo "   1) dev (or develop) (if this branch was created from dev/develop)" >&2
+            fi
         fi
         echo "   2) main/master (if this branch was created from main/master)" >&2
         echo "" >&2

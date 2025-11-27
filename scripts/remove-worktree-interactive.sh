@@ -274,7 +274,11 @@ if [ "$has_develop" = true ]; then
         echo "" >&2
         echo "   Which branch should merge status be checked against?" >&2
         if [ -n "$develop_branch" ]; then
-            echo "   1) $develop_branch (if this branch was created from $develop_branch)" >&2
+            if [ "$develop_branch" = "develop" ]; then
+                echo "   1) develop (or dev) (if this branch was created from develop/dev)" >&2
+            else
+                echo "   1) dev (or develop) (if this branch was created from dev/develop)" >&2
+            fi
         fi
         echo "   2) main/master (if this branch was created from main/master)" >&2
         echo "" >&2
@@ -467,7 +471,7 @@ else
     fi
 
     echo ""
-    "$SCRIPT_DIR/remove-worktree-branch.sh" "$SELECTED_BRANCH" "$SELECTED_PATH" $REMOTE_FLAG
+    "$SCRIPT_DIR/remove-worktree-branch.sh" "$SELECTED_BRANCH" "$SELECTED_PATH" $REMOTE_FLAG --base-branch "$BASE_BRANCH"
 fi
 
 echo ""
