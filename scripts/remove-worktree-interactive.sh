@@ -46,8 +46,8 @@ source "$SCRIPT_DIR/editor-common.sh"
 get_base_branch() {
     local branch="$1"
     
-    # Check for hotfix or chore branches (always branch from main/master in strict git flow)
-    if [[ "$branch" == hotfix/* ]] || [[ "$branch" == chore/* ]]; then
+    # Check for hotfix branches (always branch from main/master in strict git flow)
+    if [[ "$branch" == hotfix/* ]]; then
         # Try main first, then master
         if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             echo "main"
@@ -56,8 +56,8 @@ get_base_branch() {
         else
             echo "main"  # Default fallback
         fi
-    # Check for feature or release branches (branch from develop/dev in strict git flow)
-    elif [[ "$branch" == feature/* ]] || [[ "$branch" == release/* ]]; then
+    # Check for feature, release, or chore branches (branch from develop/dev in strict git flow)
+    elif [[ "$branch" == feature/* ]] || [[ "$branch" == release/* ]] || [[ "$branch" == chore/* ]]; then
         # Try develop first (strict git flow standard)
         if git show-ref --verify --quiet "refs/heads/develop" || git show-ref --verify --quiet "refs/remotes/origin/develop"; then
             echo "develop"

@@ -67,15 +67,14 @@ This project supports both **light git flow** and **strict git flow** workflows:
 - Works out of the box for repositories using a simple `main` branch workflow
 
 ### Strict Git Flow
-- **Feature branches** (`feature/*`) and **release branches** (`release/*`) branch from `develop` (standard) or `dev` (alternative shorthand)
+- **Feature branches** (`feature/*`), **release branches** (`release/*`), and **chore branches** (`chore/*`) branch from `develop` (standard) or `dev` (alternative shorthand)
 - **Hotfix branches** (`hotfix/*`) branch from `main` (or `master`)
-- **Chore branches** (`chore/*`) branch from `main` (or `master`)
 - **Other branches** (`bugfix/*`, etc.) branch from `main`/`master` (these are not part of the official Git Flow spec)
 - The scripts automatically detect which workflow your repository uses based on which branches exist
 
 **How it works:**
-- When creating `feature/*` or `release/*` branches, the script checks for `develop` first (standard), then `dev` (alternative), then falls back to `main` (light git flow).
-- When creating `hotfix/*` or `chore/*` branches, the script always uses `main` or `master` as the base.
+- When creating `feature/*`, `release/*`, or `chore/*` branches, the script checks for `develop` first (standard), then `dev` (alternative), then falls back to `main` (light git flow).
+- When creating `hotfix/*` branches, the script always uses `main` or `master` as the base.
 - **Strict validation**: In repositories with `develop`/`dev` branches (strict Git Flow), the script will:
   - **Prevent creation** of non-Git Flow branch types (`bugfix/*`, etc.) with an error message
   - **Warn about removal** of non-Git Flow branch types and prompt for base branch selection
