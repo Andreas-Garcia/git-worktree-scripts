@@ -53,9 +53,9 @@ if [ "$has_develop" = true ]; then
     echo ""
     echo "Select branch type:"
     echo "  1) feature/*  (branches from develop/dev)"
-    echo "  2) release/*  (branches from develop/dev)"
-    echo "  3) hotfix/*   (branches from main/master)"
-    echo "  4) chore/*    (branches from develop/dev)"
+    echo "  2) chore/*    (branches from develop/dev)"
+    echo "  3) release/*  (branches from develop/dev)"
+    echo "  4) hotfix/*   (branches from main/master)"
     echo ""
     read -p "Choose option (1-4): " -n 1 -r
     echo ""
@@ -65,13 +65,13 @@ if [ "$has_develop" = true ]; then
             BRANCH_TYPE="feature"
             ;;
         2)
-            BRANCH_TYPE="release"
+            BRANCH_TYPE="chore"
             ;;
         3)
-            BRANCH_TYPE="hotfix"
+            BRANCH_TYPE="release"
             ;;
         4)
-            BRANCH_TYPE="chore"
+            BRANCH_TYPE="hotfix"
             ;;
         *)
             echo "Invalid selection. Aborted."
