@@ -52,6 +52,8 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-11-30
+
 ### Changed
 
 - **Gitignored Files Handling**: Changed to configurable whitelist-only approach
