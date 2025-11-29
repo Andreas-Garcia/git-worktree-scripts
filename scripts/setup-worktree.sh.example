@@ -58,13 +58,16 @@ else
 fi
 
 # Example: Copy additional gitignored files
-# The create-worktree.sh script automatically copies common files like .env, .env.local, etc.
-# If you need to copy additional gitignored files, add them here:
+# The create-worktree.sh script copies files configured in .git-worktree-copy
+# If you need to copy additional files not in that config, add them here:
 #
 # if [ -f "$REPO_ROOT/.custom-config" ] && [ ! -f "$WORKTREE_PATH/.custom-config" ]; then
 #     cp "$REPO_ROOT/.custom-config" "$WORKTREE_PATH/.custom-config"
 #     echo "✓ Copied .custom-config"
 # fi
+#
+# Note: It's better to add files to .git-worktree-copy instead of copying here,
+# as that keeps the configuration centralized and version-controlled.
 
 # Add other repository-specific setup steps here:
 # - npm install

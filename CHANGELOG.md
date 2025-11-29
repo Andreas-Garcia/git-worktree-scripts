@@ -52,15 +52,25 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+### Changed
+
+- **Gitignored Files Handling**: Changed to configurable whitelist-only approach
+  - Now uses `.git-worktree-copy` configuration file to specify which files/directories to copy
+  - Supports glob patterns (`*`, `?`, `[...]`) and template syntax (`source:target`)
+  - Supports copying both files and directories recursively
+  - **No default behavior** - only copies files explicitly configured in `.git-worktree-copy`
+  - More secure and explicit - only copies what you configure
+
 ## [1.3.0] - 2025-11-29
 
 ### Added
 
 - **Gitignored Files Handling**: Automatic copying of gitignored files when creating worktrees
-  - Automatically copies common environment files (`.env`, `.env.local`, `.env.development`, etc.) from repo root to new worktrees
+  - Configurable via `.git-worktree-copy` file in repository root
+  - Supports glob patterns and template syntax
   - Copies template files (`.env.example` → `.env`, `.env.local.example` → `.env.local`, `.env.template` → `.env`) if target doesn't exist
   - Only copies files if they don't already exist in the worktree (prevents overwriting worktree-specific configs)
-  - Ensures each new worktree has necessary environment configuration files without manual copying
+  - Ensures each new worktree has necessary configuration files without manual copying
 
 ## [1.2.6] - 2025-11-27
 

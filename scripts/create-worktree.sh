@@ -444,44 +444,86 @@ if [ ! -f "$WORKTREE_ABS_PATH/.vscode/settings.json" ]; then
     echo ""
 fi
 
-# Copy gitignored files from repo root to worktree (if they exist)
-# Common files that are gitignored but required for development
-GITIGNORED_FILES=(
-    ".env"
-    ".env.local"
-    ".env.development"
-    ".env.development.local"
-    ".env.test"
-    ".env.test.local"
-    ".env.production"
-    ".env.production.local"
-)
-
+# Copy configured gitignored files/directories from repo root to worktree
+# Configuration is read from .git-worktree-copy file in repo root
+# Each line specifies a file or directory pattern to copy
 echo "Copying gitignored files..."
 COPIED_COUNT=0
-for file in "${GITIGNORED_FILES[@]}"; do
-    if [ -f "$REPO_ROOT/$file" ] && [ ! -f "$WORKTREE_ABS_PATH/$file" ]; then
-        cp "$REPO_ROOT/$file" "$WORKTREE_ABS_PATH/$file"
-        echo "  ✓ Copied $file"
-        ((COPIED_COUNT++))
-    fi
-done
 
-# Copy template files (e.g., .env.example -> .env) if target doesn't exist
-TEMPLATE_PAIRS=(
-    ".env.example:.env"
-    ".env.local.example:.env.local"
-    ".env.template:.env"
-)
-
-for pair in "${TEMPLATE_PAIRS[@]}"; do
-    IFS=':' read -r template target <<< "$pair"
-    if [ -f "$REPO_ROOT/$template" ] && [ ! -f "$WORKTREE_ABS_PATH/$target" ]; then
-        cp "$REPO_ROOT/$template" "$WORKTREE_ABS_PATH/$target"
-        echo "  ✓ Copied $template -> $target"
-        ((COPIED_COUNT++))
+# Function to copy a file or directory
+copy_item() {
+    local src="$1"
+    local rel_path="$2"
+    
+    # Skip if already exists in worktree
+    if [ -e "$WORKTREE_ABS_PATH/$rel_path" ]; then
+        return 0
     fi
-done
+    
+    # Ensure parent directory exists in worktree
+    local dir_path=$(dirname "$rel_path")
+    if [ "$dir_path" != "." ]; then
+        mkdir -p "$WORKTREE_ABS_PATH/$dir_path"
+    fi
+    
+    # Copy file or directory
+    if [ -d "$src" ]; then
+        cp -r "$src" "$WORKTREE_ABS_PATH/$rel_path"
+        echo "  ✓ Copied directory $rel_path"
+    elif [ -f "$src" ]; then
+        cp "$src" "$WORKTREE_ABS_PATH/$rel_path"
+        echo "  ✓ Copied $rel_path"
+    else
+        return 1
+    fi
+    
+    return 0
+}
+
+# Read configuration from .git-worktree-copy if it exists
+if [ -f "$REPO_ROOT/.git-worktree-copy" ]; then
+    # Read each line from config file (skip comments and empty lines)
+    while IFS= read -r pattern || [ -n "$pattern" ]; do
+        # Skip comments and empty lines
+        pattern=$(echo "$pattern" | sed 's/#.*$//' | xargs)
+        [ -z "$pattern" ] && continue
+        
+        # Handle template syntax: source:target
+        if [[ "$pattern" == *":"* ]]; then
+            IFS=':' read -r source target <<< "$pattern"
+            source=$(echo "$source" | xargs)
+            target=$(echo "$target" | xargs)
+            
+            if [ -f "$REPO_ROOT/$source" ] || [ -d "$REPO_ROOT/$source" ]; then
+                if copy_item "$REPO_ROOT/$source" "$target"; then
+                    ((COPIED_COUNT++))
+                fi
+            fi
+        else
+            # Regular pattern - check if it's a glob pattern
+            if [[ "$pattern" == *"*"* ]] || [[ "$pattern" == *"?"* ]] || [[ "$pattern" == *"["* ]]; then
+                # Glob pattern - find matching files in repo root
+                cd "$REPO_ROOT"
+                for file in $pattern; do
+                    if [ -e "$file" ]; then
+                        rel_path="$file"
+                        if copy_item "$REPO_ROOT/$rel_path" "$rel_path"; then
+                            ((COPIED_COUNT++))
+                        fi
+                    fi
+                done
+                cd - > /dev/null
+            else
+                # Exact file/directory path
+                if [ -e "$REPO_ROOT/$pattern" ]; then
+                    if copy_item "$REPO_ROOT/$pattern" "$pattern"; then
+                        ((COPIED_COUNT++))
+                    fi
+                fi
+            fi
+        fi
+    done < "$REPO_ROOT/.git-worktree-copy"
+fi
 
 if [ $COPIED_COUNT -gt 0 ]; then
     echo "✓ Copied $COPIED_COUNT gitignored/template file(s)"

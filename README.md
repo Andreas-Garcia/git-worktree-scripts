@@ -298,26 +298,43 @@ npx git-worktree open
 
 ## Gitignored Files Handling
 
-When creating a new worktree, the script automatically handles gitignored files that are required for development:
+When creating a new worktree, the script can automatically copy gitignored files/directories to the new worktree. You configure which files to copy using a `.git-worktree-copy` file in your repository root.
 
-**Automatically copied files** (if they exist in the repo root):
-- `.env`
-- `.env.local`
-- `.env.development`
-- `.env.development.local`
-- `.env.test`
-- `.env.test.local`
-- `.env.production`
-- `.env.production.local`
+### Configuration File
 
-**Template files** (copied if target doesn't exist):
-- `.env.example` → `.env`
-- `.env.local.example` → `.env.local`
-- `.env.template` → `.env`
+Create a `.git-worktree-copy` file in your repository root to specify which files/directories to copy:
 
-This ensures that each new worktree has the necessary environment configuration files without requiring manual copying.
+```bash
+# Copy specific files
+.env
+.env.local
+.secrets
 
-**Note**: Files are only copied if they don't already exist in the worktree, preventing overwriting of worktree-specific configurations.
+# Copy files matching a pattern
+.env.*
+
+# Copy entire directories
+config/local/
+
+# Copy template files (source:target)
+.env.example:.env
+.env.local.example:.env.local
+
+# Copy files from subdirectories
+config/*.local
+*.local.json
+```
+
+**Configuration Format**:
+- One pattern per line
+- Lines starting with `#` are comments
+- Empty lines are ignored
+- Supports glob patterns (`*`, `?`, `[...]`)
+- Supports template syntax: `source:target` (e.g., `.env.example:.env`)
+
+**Note**: 
+- Files are only copied if they don't already exist in the worktree, preventing overwriting of worktree-specific configurations
+- Both files and directories can be copied (directories are copied recursively)
 
 ## Repository-Specific Setup
 

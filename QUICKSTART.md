@@ -76,7 +76,25 @@ After installation, use the same `npx git-worktree` commands as above.
 
 ## Gitignored Files
 
-The script automatically copies common gitignored files (like `.env`, `.env.local`, etc.) from your repo root to new worktrees. It also copies template files (like `.env.example` → `.env`) if the target doesn't exist. This ensures each worktree has the necessary environment configuration files.
+Configure which gitignored files/directories to copy to new worktrees by creating a `.git-worktree-copy` file in your repository root:
+
+```bash
+# Create configuration file
+cat > .git-worktree-copy << 'EOF'
+# Copy environment files
+.env
+.env.local
+.env.*
+
+# Copy config directories
+config/local/
+
+# Copy template files
+.env.example:.env
+EOF
+```
+
+**Important**: If no `.git-worktree-copy` file exists, no files will be copied. You must explicitly configure which files to copy. See the [README](README.md#gitignored-files-handling) for full documentation.
 
 ## Repository-Specific Setup (Optional)
 

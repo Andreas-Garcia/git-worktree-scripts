@@ -1,0 +1,32 @@
+# Configuration file for git-worktree-scripts
+# This file specifies which gitignored files/directories should be copied to new worktrees
+# Place this file as .git-worktree-copy in your repository root
+#
+# Format:
+#   - One pattern per line
+#   - Lines starting with # are comments
+#   - Empty lines are ignored
+#   - Supports glob patterns (*, ?, [])
+#   - Supports template syntax: source:target (e.g., .env.example:.env)
+#
+# Examples:
+
+# Copy specific files
+.env
+.env.local
+.secrets
+
+# Copy files matching a pattern
+.env.*
+
+# Copy entire directories
+config/local/
+
+# Copy template files (source:target)
+.env.example:.env
+.env.local.example:.env.local
+
+# Copy files from subdirectories
+config/*.local
+*.local.json
+
