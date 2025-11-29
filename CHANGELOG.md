@@ -54,6 +54,13 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [1.4.0] - 2025-11-30
 
+### Fixed
+
+- **Subdirectory Support**: Fixed glob patterns to work with files in subdirectories, not just repo root
+  - Patterns like `config/*.local` now correctly match files in subdirectories
+  - Supports recursive glob patterns with `**` (e.g., `**/*.env.local`)
+  - Exact paths in subdirectories were already supported, now glob patterns work too
+
 ### Changed
 
 - **Gitignored Files Handling**: Changed to configurable whitelist-only approach
