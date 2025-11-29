@@ -52,7 +52,7 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
-## [1.4.0] - 2025-11-30
+## [1.4.1] - 2025-11-30
 
 ### Fixed
 
@@ -60,6 +60,8 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
   - Patterns like `config/*.local` now correctly match files in subdirectories
   - Supports recursive glob patterns with `**` (e.g., `**/*.env.local`)
   - Exact paths in subdirectories were already supported, now glob patterns work too
+
+## [1.4.0] - 2025-11-30
 
 ### Changed
 
