@@ -26,7 +26,12 @@ config/local/
 .env.example:.env
 .env.local.example:.env.local
 
-# Copy files from subdirectories
+# Copy files from subdirectories (glob patterns work recursively)
 config/*.local
 *.local.json
+**/*.env.local
+
+# Copy entire subdirectories
+config/local/
+secrets/
 

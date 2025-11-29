@@ -63,16 +63,19 @@ npx git-worktree remove
 This project supports both **light git flow** and **strict git flow** workflows:
 
 ### Light Git Flow
+
 - All branches (features, hotfixes, etc.) branch from `main`
 - Works out of the box for repositories using a simple `main` branch workflow
 
 ### Strict Git Flow
+
 - **Feature branches** (`feature/*`), **release branches** (`release/*`), and **chore branches** (`chore/*`) branch from `develop` (standard) or `dev` (alternative shorthand)
 - **Hotfix branches** (`hotfix/*`) branch from `main` (or `master`)
 - **Other branches** (`bugfix/*`, etc.) branch from `main`/`master` (these are not part of the official Git Flow spec)
 - The scripts automatically detect which workflow your repository uses based on which branches exist
 
 **How it works:**
+
 - When creating `feature/*`, `release/*`, or `chore/*` branches, the script checks for `develop` first (standard), then `dev` (alternative), then falls back to `main` (light git flow).
 - When creating `hotfix/*` branches, the script always uses `main` or `master` as the base.
 - **Strict validation**: In repositories with `develop`/`dev` branches (strict Git Flow), the script will:
@@ -123,6 +126,7 @@ The `git-worktree create` command automates the following main steps:
 1. **Validates prerequisites**: Checks if branch/worktree exists, ensures base branch exists, and worktree path is available
 
 2. **Determines base branch**: Based on git flow conventions:
+
    - **Feature branches** (`feature/*`) and **release branches** (`release/*`): Use `develop` if it exists (strict git flow), otherwise fall back to `main` (light git flow)
    - **Hotfix branches** (`hotfix/*`): Use `main` or `master`
    - **Other branches**: Default to `main` or `master`
@@ -326,13 +330,16 @@ config/*.local
 ```
 
 **Configuration Format**:
+
 - One pattern per line
 - Lines starting with `#` are comments
 - Empty lines are ignored
-- Supports glob patterns (`*`, `?`, `[...]`)
+- Supports glob patterns (`*`, `?`, `[...]`) - works recursively for subdirectories
 - Supports template syntax: `source:target` (e.g., `.env.example:.env`)
+- Patterns can match files/directories in any subdirectory (e.g., `config/*.local`, `**/*.env`)
 
-**Note**: 
+**Note**:
+
 - Files are only copied if they don't already exist in the worktree, preventing overwriting of worktree-specific configurations
 - Both files and directories can be copied (directories are copied recursively)
 

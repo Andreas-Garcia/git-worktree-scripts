@@ -502,19 +502,23 @@ if [ -f "$REPO_ROOT/.git-worktree-copy" ]; then
         else
             # Regular pattern - check if it's a glob pattern
             if [[ "$pattern" == *"*"* ]] || [[ "$pattern" == *"?"* ]] || [[ "$pattern" == *"["* ]]; then
-                # Glob pattern - find matching files in repo root
-                cd "$REPO_ROOT"
-                for file in $pattern; do
-                    if [ -e "$file" ]; then
-                        rel_path="$file"
+                # Glob pattern - find matching files/directories
+                # Use bash glob expansion (shopt -s globstar for recursive matching)
+                (
+                    cd "$REPO_ROOT"
+                    shopt -s globstar nullglob 2>/dev/null || true
+                    for file in $pattern; do
+                        # Skip .git directory
+                        [[ "$file" == ./.git/* ]] || [[ "$file" == ./.git ]] && continue
+                        # Remove leading ./ if present
+                        rel_path="${file#./}"
                         if copy_item "$REPO_ROOT/$rel_path" "$rel_path"; then
                             ((COPIED_COUNT++))
                         fi
-                    fi
-                done
-                cd - > /dev/null
+                    done
+                )
             else
-                # Exact file/directory path
+                # Exact file/directory path (can be in subdirectories)
                 if [ -e "$REPO_ROOT/$pattern" ]; then
                     if copy_item "$REPO_ROOT/$pattern" "$pattern"; then
                         ((COPIED_COUNT++))
