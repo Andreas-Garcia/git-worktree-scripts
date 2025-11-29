@@ -52,6 +52,8 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-11-29
+
 ### Added
 
 - **Gitignored Files Handling**: Automatic copying of gitignored files when creating worktrees
