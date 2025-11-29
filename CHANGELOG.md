@@ -52,6 +52,14 @@ All contributors (including maintainers) should update `CHANGELOG.md` when creat
 
 ## [Unreleased]
 
+### Added
+
+- **Gitignored Files Handling**: Automatic copying of gitignored files when creating worktrees
+  - Automatically copies common environment files (`.env`, `.env.local`, `.env.development`, etc.) from repo root to new worktrees
+  - Copies template files (`.env.example` → `.env`, `.env.local.example` → `.env.local`, `.env.template` → `.env`) if target doesn't exist
+  - Only copies files if they don't already exist in the worktree (prevents overwriting worktree-specific configs)
+  - Ensures each new worktree has necessary environment configuration files without manual copying
+
 ## [1.2.6] - 2025-11-27
 
 ### Fixed

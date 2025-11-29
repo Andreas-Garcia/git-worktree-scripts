@@ -444,6 +444,52 @@ if [ ! -f "$WORKTREE_ABS_PATH/.vscode/settings.json" ]; then
     echo ""
 fi
 
+# Copy gitignored files from repo root to worktree (if they exist)
+# Common files that are gitignored but required for development
+GITIGNORED_FILES=(
+    ".env"
+    ".env.local"
+    ".env.development"
+    ".env.development.local"
+    ".env.test"
+    ".env.test.local"
+    ".env.production"
+    ".env.production.local"
+)
+
+echo "Copying gitignored files..."
+COPIED_COUNT=0
+for file in "${GITIGNORED_FILES[@]}"; do
+    if [ -f "$REPO_ROOT/$file" ] && [ ! -f "$WORKTREE_ABS_PATH/$file" ]; then
+        cp "$REPO_ROOT/$file" "$WORKTREE_ABS_PATH/$file"
+        echo "  ✓ Copied $file"
+        ((COPIED_COUNT++))
+    fi
+done
+
+# Copy template files (e.g., .env.example -> .env) if target doesn't exist
+TEMPLATE_PAIRS=(
+    ".env.example:.env"
+    ".env.local.example:.env.local"
+    ".env.template:.env"
+)
+
+for pair in "${TEMPLATE_PAIRS[@]}"; do
+    IFS=':' read -r template target <<< "$pair"
+    if [ -f "$REPO_ROOT/$template" ] && [ ! -f "$WORKTREE_ABS_PATH/$target" ]; then
+        cp "$REPO_ROOT/$template" "$WORKTREE_ABS_PATH/$target"
+        echo "  ✓ Copied $template -> $target"
+        ((COPIED_COUNT++))
+    fi
+done
+
+if [ $COPIED_COUNT -gt 0 ]; then
+    echo "✓ Copied $COPIED_COUNT gitignored/template file(s)"
+else
+    echo "  (No gitignored files to copy)"
+fi
+echo ""
+
 # Run repository-specific setup script if it exists
 if [ -f "$REPO_ROOT/scripts/setup-worktree.sh" ]; then
     echo "Running repository-specific setup..."

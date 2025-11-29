@@ -57,6 +57,15 @@ else
     echo "Virtual environment already exists at .venv"
 fi
 
+# Example: Copy additional gitignored files
+# The create-worktree.sh script automatically copies common files like .env, .env.local, etc.
+# If you need to copy additional gitignored files, add them here:
+#
+# if [ -f "$REPO_ROOT/.custom-config" ] && [ ! -f "$WORKTREE_PATH/.custom-config" ]; then
+#     cp "$REPO_ROOT/.custom-config" "$WORKTREE_PATH/.custom-config"
+#     echo "✓ Copied .custom-config"
+# fi
+
 # Add other repository-specific setup steps here:
 # - npm install
 # - bundle install

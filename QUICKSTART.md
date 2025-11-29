@@ -74,9 +74,13 @@ pnpm add -D git-worktree-scripts
 
 After installation, use the same `npx git-worktree` commands as above.
 
+## Gitignored Files
+
+The script automatically copies common gitignored files (like `.env`, `.env.local`, etc.) from your repo root to new worktrees. It also copies template files (like `.env.example` → `.env`) if the target doesn't exist. This ensures each worktree has the necessary environment configuration files.
+
 ## Repository-Specific Setup (Optional)
 
-If your repository needs custom setup when creating worktrees (e.g., Python virtual environment, npm install, etc.), create a `scripts/setup-worktree.sh` file:
+If your repository needs custom setup when creating worktrees (e.g., Python virtual environment, npm install, additional gitignored files, etc.), create a `scripts/setup-worktree.sh` file:
 
 ```bash
 # Create your own setup script

@@ -141,9 +141,11 @@ The `git-worktree create` command automates the following main steps:
    - For new branches: Creates from the updated base branch with your specified branch name
    - For existing branches: Creates worktree and checks out the existing branch (fetches from remote if needed)
 
-6. **Sets up development environment**: Runs repository-specific setup script if `scripts/setup-worktree.sh` exists
+6. **Copies gitignored files**: Automatically copies common gitignored files (like `.env`, `.env.local`, etc.) from the repo root to the new worktree if they exist. Also copies template files (like `.env.example` → `.env`) if the target doesn't exist
 
-7. **Opens in editor**: Automatically opens the worktree directory in Cursor or VS Code
+7. **Sets up development environment**: Runs repository-specific setup script if `scripts/setup-worktree.sh` exists
+
+8. **Opens in editor**: Automatically opens the worktree directory in Cursor or VS Code
 
 **Important**:
 
@@ -294,9 +296,32 @@ npx git-worktree open
 - You cannot check out the same branch in multiple worktrees simultaneously
 - Worktrees are useful for comparing branches side-by-side or working on multiple features without switching contexts
 
+## Gitignored Files Handling
+
+When creating a new worktree, the script automatically handles gitignored files that are required for development:
+
+**Automatically copied files** (if they exist in the repo root):
+- `.env`
+- `.env.local`
+- `.env.development`
+- `.env.development.local`
+- `.env.test`
+- `.env.test.local`
+- `.env.production`
+- `.env.production.local`
+
+**Template files** (copied if target doesn't exist):
+- `.env.example` → `.env`
+- `.env.local.example` → `.env.local`
+- `.env.template` → `.env`
+
+This ensures that each new worktree has the necessary environment configuration files without requiring manual copying.
+
+**Note**: Files are only copied if they don't already exist in the worktree, preventing overwriting of worktree-specific configurations.
+
 ## Repository-Specific Setup
 
-If your repository needs custom setup when creating worktrees (e.g., Python virtual environment), create a `scripts/setup-worktree.sh` file:
+If your repository needs custom setup when creating worktrees (e.g., Python virtual environment, additional gitignored files), create a `scripts/setup-worktree.sh` file:
 
 ```bash
 #!/bin/bash
@@ -307,6 +332,12 @@ if [ ! -d ".venv" ]; then
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -e ".[dev]"
+fi
+
+# Example: Copy additional gitignored files
+# The script already handles common .env files, but you can add more:
+if [ -f "$REPO_ROOT/.custom-config" ] && [ ! -f "$WORKTREE_PATH/.custom-config" ]; then
+    cp "$REPO_ROOT/.custom-config" "$WORKTREE_PATH/.custom-config"
 fi
 ```
 
